@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Расчёт поставщиков</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1923; color: #e8e0d4; font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+.header { background: #162230; border-bottom: 1px solid #1e3048; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+.header-title { font-size: 18px; font-weight: 700; }
+.header-sub { font-size: 10px; color: #4a7fa5; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px; }
+.tabs { display: flex; gap: 6px; }
+.tab { padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; }
+.tab.active { background: #1a6b9e; color: #fff; }
+.tab.inactive { background: #1e3048; color: #7aa8c4; }
+
+.container { max-width: 700px; margin: 0 auto; padding: 16px; }
+.card { background: #162230; border-radius: 12px; padding: 14px; margin-bottom: 14px; border: 1px solid #1e3048; }
+.card-label { font-size: 11px; color: #4a7fa5; margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.upload-btn { width: 100%; padding: 11px; border-radius: 8px; border: 2px dashed #1e3a54; background: transparent; color: #4a7fa5; font-size: 14px; cursor: pointer; margin-bottom: 10px; }
+.empty-msg { color: #3d6480; font-size: 13px; text-align: center; padding: 6px 0; }
+.file-item { background: #1a2d3e; border-radius: 10px; padding: 11px; margin-bottom: 8px; }
+.file-item-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.file-name { font-size: 12px; color: #a8c8e0; }
+.remove-btn { background: none; border: none; color: #4a6880; cursor: pointer; font-size: 18px; }
+.shop-selector { display: flex; gap: 6px; flex-wrap: wrap; }
+.shop-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid #1e3a54; background: transparent; color: #4a7fa5; font-size: 12px; cursor: pointer; }
+.shop-btn.selected { background: #1a6b9e; border-color: #1a6b9e; color: #fff; font-weight: 600; }
+.shop-hint { font-size: 11px; color: #e88060; margin-top: 6px; }
+
+.calc-btn { width: 100%; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 18px; }
+.calc-btn.ready { background: linear-gradient(135deg, #1a6b9e, #0f4d75); color: #fff; }
+.calc-btn.disabled { background: #1e3048; color: #3d6480; cursor: not-allowed; }
+.error { background: #2d1a1a; border: 1px solid #6b2d2d; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; color: #e88080; font-size: 13px; }
+
+/* RESULTS TABLE */
+.week-block { margin-bottom: 20px; }
+.week-label { font-size: 11px; color: #4a7fa5; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 600; }
+
+.result-table { width: 100%; border-collapse: collapse; border-radius: 10px; overflow: hidden; }
+.result-table th { background: #1a2d3e; color: #7aa8c4; font-size: 11px; font-weight: 600; padding: 9px 10px; text-align: right; border-bottom: 1px solid #1e3048; }
+.result-table th:first-child { text-align: left; }
+.result-table td { padding: 0; border-bottom: 1px solid #111d27; }
+
+.sup-row { display: grid; grid-template-columns: 1fr 90px 90px 90px 95px; gap: 0; cursor: pointer; transition: background 0.1s; }
+.sup-row:hover { background: #1a2d3e; }
+.sup-row td, .sup-cell { padding: 10px 10px; font-size: 13px; }
+.sup-name { color: #c8dff0; font-weight: 600; }
+.sup-chorsu { color: #7abde8; text-align: right; }
+.sup-kadysh { color: #a8d4a8; text-align: right; }
+.sup-samark { color: #e8c87a; text-align: right; }
+.sup-total { color: #fff; font-weight: 700; text-align: right; }
+.sup-zero { color: #2a4060; text-align: right; }
+
+.total-row { background: #1e3a20 !important; }
+.total-row .sup-name { color: #8ab870; font-weight: 700; font-size: 13px; }
+.total-row .sup-chorsu { color: #7abde8; font-weight: 700; }
+.total-row .sup-kadysh { color: #a8d4a8; font-weight: 700; }
+.total-row .sup-samark { color: #e8c87a; font-weight: 700; }
+.total-row .sup-total { color: #ffd760; font-weight: 800; font-size: 14px; }
+
+/* DETAIL PANEL */
+.detail-panel { background: #0d1a26; border-top: none; display: none; }
+.detail-panel.open { display: block; }
+.detail-header { display: grid; grid-template-columns: 70px 1fr 70px 70px 70px 80px; gap: 4px; padding: 7px 10px; background: #162230; border-top: 1px solid #1e3048; }
+.detail-header span { font-size: 10px; color: #4a7fa5; font-weight: 600; text-transform: uppercase; }
+.detail-header span:not(:first-child) { text-align: right; }
+.detail-item { display: grid; grid-template-columns: 70px 1fr 70px 70px 70px 80px; gap: 4px; padding: 7px 10px; border-top: 1px solid #0f1923; font-size: 12px; }
+.detail-item:hover { background: #162230; }
+.di-code { color: #4a7fa5; font-family: monospace; }
+.di-name { color: #8ab0c8; font-size: 11px; }
+.di-qty { color: #7aa8c4; text-align: right; }
+.di-chorsu { color: #7abde8; text-align: right; }
+.di-kadysh { color: #a8d4a8; text-align: right; }
+.di-samark { color: #e8c87a; text-align: right; }
+.di-sum { color: #c8dff0; font-weight: 600; text-align: right; }
+.di-zero { color: #1e3048; text-align: right; }
+
+.grand-banner { background: linear-gradient(135deg, #0f4d75, #1a6b9e); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+.grand-banner-title { font-size: 10px; color: #a8d4f0; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.grand-banner-row { display: flex; justify-content: space-between; align-items: center; }
+.grand-total-sum { font-size: 24px; font-weight: 800; color: #fff; }
+.grand-shops { display: flex; gap: 14px; margin-top: 8px; flex-wrap: wrap; }
+.grand-shop-item { font-size: 12px; }
+.gs-label { color: #7ab8d8; }
+.gs-val { color: #fff; font-weight: 700; }
+
+.unknown-block { background: #1e2a1a; border: 1px solid #3d5a30; border-radius: 10px; padding: 12px 14px; margin-top: 10px; }
+.unknown-title { color: #8ab870; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.unknown-codes { color: #6a8a58; font-size: 11px; line-height: 1.8; }
+
+/* Edit tab */
+.msg { border-radius: 8px; padding: 9px 12px; margin-bottom: 10px; font-size: 13px; }
+.msg.ok { background: #1a2d1a; border: 1px solid #3d6b30; color: #8ab870; }
+.msg.err { background: #2d1a1a; border: 1px solid #6b2d2d; color: #e88080; }
+.input { padding: 9px 12px; border-radius: 7px; border: 1px solid #1e3a54; background: #0f1923; color: #e8e0d4; font-size: 14px; }
+.btn-blue { padding: 9px 14px; border-radius: 7px; border: none; background: #1a6b9e; color: #fff; font-weight: 600; cursor: pointer; font-size: 14px; }
+.edit-supplier { background: #162230; border-radius: 10px; margin-bottom: 10px; border: 1px solid #1e3048; overflow: hidden; }
+.edit-sup-header { padding: 11px 14px; display: flex; justify-content: space-between; align-items: center; background: #1a2d3e; }
+.edit-sup-name { font-weight: 700; font-size: 14px; color: #c8dff0; }
+.edit-sup-count { color: #3d6480; font-size: 12px; margin-left: 6px; }
+.edit-btns { display: flex; gap: 6px; }
+.btn-edit { padding: 5px 10px; border-radius: 6px; border: none; color: #a8c8e0; cursor: pointer; font-size: 12px; }
+.btn-del-sup { padding: 5px 9px; border-radius: 6px; border: none; background: #2d1a1a; color: #e88080; cursor: pointer; font-size: 12px; }
+.edit-body { padding: 12px; }
+.item-row { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.item-code { font-family: monospace; color: #4a7fa5; font-size: 12px; width: 65px; flex-shrink: 0; }
+.item-cost-input { flex: 1; padding: 6px 9px; border-radius: 6px; border: 1px solid #1e3a54; background: #0f1923; color: #e8e0d4; font-size: 13px; }
+.item-unit { color: #3d6480; font-size: 11px; }
+.btn-del-item { padding: 5px 9px; border-radius: 6px; border: none; background: #2d1a1a; color: #e88080; cursor: pointer; font-size: 12px; }
+.add-item-section { border-top: 1px solid #1e3048; padding-top: 10px; margin-top: 6px; }
+.add-item-label { font-size: 10px; color: #4a7fa5; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 1px; }
+.add-item-row { display: flex; gap: 7px; }
+.code-input { width: 75px; padding: 7px 9px; border-radius: 6px; border: 1px solid #1e3a54; background: #0f1923; color: #e8e0d4; font-size: 13px; }
+.cost-input { flex: 1; padding: 7px 9px; border-radius: 6px; border: 1px solid #1e3a54; background: #0f1923; color: #e8e0d4; font-size: 13px; }
+.btn-add-item { padding: 7px 12px; border-radius: 6px; border: none; background: #1a6b9e; color: #fff; font-weight: 700; cursor: pointer; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-sub">Расчёт выплат</div>
+    <div class="header-title">Поставщики</div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('calc')">Расчёт</button>
+    <button class="tab inactive" onclick="switchTab('edit')">Товары</button>
+  </div>
+</div>
+
+<div class="container">
+  <!-- CALC TAB -->
+  <div id="tab-calc">
+    <!-- API Section -->
+    <div class="card">
+      <div class="card-label">🔗 Загрузить из Regos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <div style="font-size:11px;color:#4a7fa5;margin-bottom:4px">Дата начала</div>
+          <input type="date" id="apiStartDate" class="input" style="width:100%;font-size:13px;padding:8px"/>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#4a7fa5;margin-bottom:4px">Дата конца</div>
+          <input type="date" id="apiEndDate" class="input" style="width:100%;font-size:13px;padding:8px"/>
+        </div>
+      </div>
+      <div id="apiStatus" style="font-size:12px;color:#4a7fa5;min-height:18px;margin-bottom:6px"></div>
+      <button onclick="loadAllFromApi()" style="width:100%;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#1a7a3a,#0f5228);color:#fff;font-size:15px;font-weight:700;cursor:pointer;">
+        🔄 Загрузить продажи из Regos
+      </button>
+    </div>
+
+    <div style="text-align:center;color:#2a4060;font-size:12px;margin:0 0 12px">— или загрузите Excel файлы вручную —</div>
+
+    <div class="card">
+      <div class="card-label">Файлы Excel из Regos</div>
+      <button class="upload-btn" onclick="document.getElementById('fileInput').click()">+ Добавить файл</button>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" multiple style="display:none" onchange="handleFiles(this)"/>
+      <div id="fileList"><div class="empty-msg">Загрузите отчёты и укажите филиал для каждого</div></div>
+    </div>
+    <div id="errorMsg" style="display:none" class="error"></div>
+    <button id="calcBtn" class="calc-btn disabled" onclick="calculate()">Рассчитать выплаты</button>
+    <div id="results"></div>
+  </div>
+
+  <!-- EDIT TAB -->
+  <div id="tab-edit" style="display:none">
+    <div id="editMsg" style="display:none" class="msg ok"></div>
+    <div class="card">
+      <div class="card-label" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Новый поставщик</span>
+        <div style="display:flex;gap:6px">
+          <button onclick="exportData()" style="padding:5px 10px;border-radius:6px;border:none;background:#1e3a54;color:#7aa8c4;font-size:11px;cursor:pointer">💾 Экспорт</button>
+          <button onclick="document.getElementById('importInput').click()" style="padding:5px 10px;border-radius:6px;border:none;background:#1e3a54;color:#7aa8c4;font-size:11px;cursor:pointer">📂 Импорт</button>
+          <input type="file" id="importInput" accept=".json" style="display:none" onchange="importData(this)"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input class="input" style="flex:1" id="newSupplierName" placeholder="Имя поставщика"/>
+        <button class="btn-blue" onclick="addSupplier()">+</button>
+      </div>
+    </div>
+    <div id="supplierList"></div>
+  </div>
+</div>
+
+<script>
+const SHOPS = ["Чорсу", "Кадышева", "Самарканд"];
+const SHOP_COLORS = { "Чорсу": "#7abde8", "Кадышева": "#a8d4a8", "Самарканд": "#e8c87a" };
+
+let suppliers = [
+  { name: "Али ака", items: [
+    {code:"000237",cost:65000},{code:"000314",cost:60000},{code:"000350",cost:50000},
+    {code:"000418",cost:70000},{code:"000419",cost:55000},{code:"000420",cost:45000},
+    {code:"000491",cost:55000},{code:"000519",cost:55000},{code:"000538",cost:65000},
+    {code:"000545",cost:60000},{code:"000573",cost:75000},{code:"000574",cost:65000},
+    {code:"000632",cost:95000},{code:"000638",cost:115000},{code:"000649",cost:93000},
+    {code:"000683",cost:85000},{code:"000711",cost:165000},{code:"000712",cost:19000},
+    {code:"000722",cost:220000},{code:"000724",cost:180000},{code:"000763",cost:85000},
+    {code:"000770",cost:60000},{code:"000771",cost:90000},{code:"000777",cost:105000},
+    {code:"000790",cost:80000},{code:"000791",cost:185000},{code:"000857",cost:230000},
+    {code:"000956",cost:90000},{code:"000998",cost:70000},{code:"001025",cost:16000},
+    {code:"001054",cost:65000},{code:"003504",cost:55000},{code:"003552",cost:70000},
+    {code:"003602",cost:70000},{code:"003629",cost:19000},{code:"003630",cost:61000},
+    {code:"003647",cost:55000},{code:"003653",cost:70000},{code:"003668",cost:60000},
+    {code:"003669",cost:85000},{code:"003909",cost:70000},{code:"003978",cost:75000},
+    {code:"003996",cost:55000}
+  ]},
+  { name: "Шавкат ака постель", items: [
+    {code:"000444",cost:68000},{code:"000445",cost:53000},
+    {code:"003910",cost:68000},{code:"003911",cost:53000}
+  ]},
+  { name: "Шавкат ака сочик", items: [
+    {code:"001096",cost:113000},{code:"004004",cost:113000}
+  ] },
+  { name: "Шим чорсу", items: [
+    {code:"000938",cost:155000},{code:"000939",cost:155000},{code:"000940",cost:130000},
+    {code:"000941",cost:130000},{code:"000942",cost:140000},{code:"000943",cost:150000},
+    {code:"000944",cost:150000},{code:"000945",cost:150000},{code:"000946",cost:150000},
+    {code:"000947",cost:150000},{code:"000948",cost:165000},{code:"000949",cost:165000},
+    {code:"000950",cost:165000},{code:"000951",cost:165000},{code:"000952",cost:155000},
+    {code:"000953",cost:155000},{code:"000954",cost:155000},{code:"001026",cost:70000}
+  ]},
+  { name: "Хасанбой", items: [
+    {code:"000639",cost:120000},{code:"000650",cost:120000},{code:"000756",cost:120000}
+  ]},
+  { name: "Жавлон ака Селаник", items: [
+    {code:"000865",cost:70000},{code:"000866",cost:75000},{code:"000957",cost:58000}
+  ]},
+  { name: "Азиз ака Корея", items: [
+    {code:"001015",cost:40000},{code:"001024",cost:35000},
+    {code:"001027",cost:25000},{code:"001028",cost:20000}
+  ]},
+  { name: "Комил ака Самарканд", items: [
+    {code:"001022",cost:80000},{code:"001023",cost:115000}
+  ]},
+  { name: "Носиржон ака", items: [
+    {code:"001038",cost:105000}
+  ]},
+  { name: "Шоира опа паплин", items: [
+    {code:"001057",cost:60000},{code:"001058",cost:35000},{code:"001059",cost:18000},
+    {code:"001060",cost:28000},{code:"001061",cost:75000},{code:"001062",cost:35000},
+    {code:"001088",cost:30000},{code:"001106",cost:25000},{code:"001107",cost:30000},
+    {code:"003960",cost:60000},{code:"003961",cost:35000},{code:"003962",cost:28000},
+    {code:"003963",cost:18000},{code:"003964",cost:75000},{code:"003965",cost:35000}
+  ]}
+];
+
+let uploadedFiles = [];
+let openDetails = {};
+let openEditSuppliers = {};
+
+function normalizeCode(raw) {
+  if (!raw) return "";
+  return String(raw).trim().replace(/^0+/, "").padStart(6, "0");
+}
+function fmt(n) {
+  if (!n) return "";
+  return Math.round(n).toLocaleString("ru-RU");
+}
+function buildLookup() {
+  const map = {};
+  for (const s of suppliers)
+    for (const item of s.items)
+      map[normalizeCode(item.code)] = { supplier: s.name, cost: item.cost };
+  return map;
+}
+function showMsg(text, isOk) {
+  const el = document.getElementById("editMsg");
+  el.textContent = text;
+  el.className = "msg " + (isOk ? "ok" : "err");
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 2500);
+}
+
+function switchTab(t) {
+  document.getElementById("tab-calc").style.display = t === "calc" ? "block" : "none";
+  document.getElementById("tab-edit").style.display = t === "edit" ? "block" : "none";
+  document.querySelectorAll(".tab").forEach((el, i) => {
+    el.className = "tab " + ((i === 0) === (t === "calc") ? "active" : "inactive");
+  });
+  if (t === "edit") renderEditTab();
+}
+
+function handleFiles(input) {
+  const newFiles = Array.from(input.files);
+  for (const f of newFiles)
+    if (!uploadedFiles.find(x => x.file.name === f.name))
+      uploadedFiles.push({ file: f, shop: null });
+  input.value = "";
+  renderFileList();
+}
+function removeFile(name) {
+  uploadedFiles = uploadedFiles.filter(f => f.file.name !== name);
+  renderFileList();
+  document.getElementById("results").innerHTML = "";
+}
+function selectShop(fileName, shop) {
+  const e = uploadedFiles.find(f => f.file.name === fileName);
+  if (e) e.shop = shop;
+  renderFileList();
+}
+function renderFileList() {
+  const el = document.getElementById("fileList");
+  const btn = document.getElementById("calcBtn");
+  if (uploadedFiles.length === 0) {
+    el.innerHTML = '<div class="empty-msg">Загрузите отчёты и укажите филиал для каждого</div>';
+    btn.className = "calc-btn disabled"; return;
+  }
+  const allOk = uploadedFiles.every(f => f.shop);
+  btn.className = allOk ? "calc-btn ready" : "calc-btn disabled";
+  el.innerHTML = uploadedFiles.map(f => `
+    <div class="file-item">
+      <div class="file-item-top">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span>📊</span><span class="file-name">${f.file.name}</span>
+        </div>
+        <button class="remove-btn" onclick="removeFile('${f.file.name}')">×</button>
+      </div>
+      <div class="shop-selector">
+        ${SHOPS.map(s => `<button class="shop-btn ${f.shop===s?'selected':''}" onclick="selectShop('${f.file.name}','${s}')">${s}</button>`).join("")}
+      </div>
+      ${!f.shop ? '<div class="shop-hint">⚠ Укажите филиал</div>' : ''}
+    </div>
+  `).join("");
+}
+
+function parseFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+        if (!rows || rows.length < 2) return reject(new Error("Файл пустой"));
+
+        // Find header row: contains "Код номенкл."
+        let headerIdx = -1, codeCol = -1, qtyCol = -1;
+        for (let i = 0; i < Math.min(rows.length, 10); i++) {
+          for (let j = 0; j < rows[i].length; j++) {
+            if (String(rows[i][j] || "").trim() === "Код номенкл.") {
+              headerIdx = i;
+              codeCol = j;
+              break;
+            }
+          }
+          if (headerIdx !== -1) break;
+        }
+        if (headerIdx === -1) return reject(new Error("Не найдена колонка 'Код номенкл.'"));
+
+        // Find last "Кол-во" = Итого qty; also find nameCol dynamically
+        const headerRow = rows[headerIdx];
+        let nameCol = -1;
+        for (let j = 0; j < headerRow.length; j++) {
+          const v = String(headerRow[j] || "").trim();
+          if (v === "Кол-во") qtyCol = j; // last = Итого
+          if (v === "Наименование") nameCol = j;
+        }
+        if (qtyCol === -1) return reject(new Error("Не найдена колонка 'Кол-во'"));
+        // fallback: name is whichever of col 0/1 is not codeCol
+        if (nameCol === -1) nameCol = codeCol === 0 ? 1 : 0;
+
+        const sales = {}, names = {};
+
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+          const row = rows[i];
+          const rawCode = String(row[codeCol] || "").trim();
+          // Skip rows without a numeric code (group headers, empty rows)
+          if (!rawCode || !/^[0-9]+$/.test(rawCode)) continue;
+          const qty = parseFloat(row[qtyCol]) || 0;
+          if (qty <= 0) continue;
+          const code = normalizeCode(rawCode);
+          if (!code) continue;
+          sales[code] = (sales[code] || 0) + qty;
+          if (!names[code]) {
+            names[code] = String(row[nameCol] || "").trim();
+          }
+        }
+
+        resolve({ sales, names });
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function calculate() {
+  if (!uploadedFiles.every(f => f.shop)) return;
+  const errEl=document.getElementById("errorMsg"), resEl=document.getElementById("results");
+  errEl.style.display="none";
+  resEl.innerHTML='<div style="color:#4a7fa5;text-align:center;padding:20px">Считаю...</div>';
+  openDetails={};
+
+  try {
+    const lookup = buildLookup();
+    // data[supplier][shop] = { total, items: {code: {qty, cost, sum}} }
+    const data = {};
+    const unknown = [];
+    const loadedShops = uploadedFiles.map(f => f.shop);
+
+    for (const {file, shop} of uploadedFiles) {
+      let parsed;
+      try { parsed = await parseFile(file); }
+      catch(e) {
+        errEl.textContent="Ошибка файла "+file.name+": "+e.message;
+        errEl.style.display="block"; resEl.innerHTML=""; return;
+      }
+      const {sales, names} = parsed;
+      for (const [code, qty] of Object.entries(sales)) {
+        if (lookup[code]) {
+          const {supplier, cost} = lookup[code];
+          if (!data[supplier]) data[supplier]={};
+          if (!data[supplier][shop]) data[supplier][shop]={total:0, items:{}};
+          const sum = qty*cost;
+          data[supplier][shop].total += sum;
+          if (!data[supplier][shop].items[code]) data[supplier][shop].items[code]={qty:0,cost,sum:0,name:names[code]||""};
+          data[supplier][shop].items[code].qty += qty;
+          data[supplier][shop].items[code].sum += sum;
+          if (!data[supplier][shop].items[code].name && names[code]) data[supplier][shop].items[code].name=names[code];
+        } else {
+          if (!unknown.includes(code)) unknown.push(code);
+        }
+      }
+    }
+
+    window._calcData = { data, unknown, loadedShops };
+    renderResults(data, unknown, loadedShops);
+  } catch(e) {
+    errEl.textContent="Ошибка: "+e.message;
+    errEl.style.display="block"; resEl.innerHTML="";
+  }
+}
+
+function renderResults(data, unknown, loadedShops) {
+  // active shops in order
+  const activeShops = SHOPS.filter(s => loadedShops.includes(s));
+
+  // supplier order: follow suppliers array order, ALL suppliers (even with zero sales)
+  const supNames = suppliers.map(s=>s.name);
+
+  // grand totals
+  let grandTotal=0;
+  const shopGrand={};
+  for (const sup of supNames)
+    for (const shop of activeShops) {
+      const v=(data[sup]&&data[sup][shop]?data[sup][shop].total:0)||0;
+      grandTotal+=v; shopGrand[shop]=(shopGrand[shop]||0)+v;
+    }
+
+  let html = `
+    <div class="grand-banner">
+      <div class="grand-banner-title">Итого к выплате за неделю</div>
+      <div class="grand-total-sum">${fmt(grandTotal)} сум</div>
+      <div class="grand-shops">
+        ${activeShops.map(sh=>`
+          <div class="grand-shop-item">
+            <span class="gs-label">${sh}: </span>
+            <span class="gs-val">${fmt(shopGrand[sh]||0)}</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <button onclick="copyToExcel()" style="width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#1a7a3a,#0f5228);color:#fff;font-size:15px;font-weight:700;cursor:pointer;">
+        📋 Скопировать для Excel
+      </button>
+    </div>
+
+    <div class="week-block">
+      <table class="result-table">
+        <thead>
+          <tr>
+            <th style="text-align:left">Поставщик</th>
+            ${activeShops.map(sh=>`<th style="color:${SHOP_COLORS[sh]}">${sh}</th>`).join("")}
+            <th style="color:#ffd760">Итого</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById("results").innerHTML = html;
+
+  const tbody = document.getElementById("tableBody");
+
+  for (let si=0; si<supNames.length; si++) {
+    const sup = supNames[si];
+    const supId = "sup_" + si;
+    let supTotal=0;
+    const shopVals={};
+    for (const sh of activeShops) {
+      const v=(data[sup]&&data[sup][sh]||{}).total||0;
+      shopVals[sh]=v; supTotal+=v;
+    }
+
+    // Main row
+    const tr1 = document.createElement("tr");
+    tr1.style.cursor = "pointer";
+    tr1.addEventListener("click", function(){ toggleDetail(supId); });
+
+    const tdName = document.createElement("td");
+    tdName.style.cssText = "padding:10px;color:#c8dff0;font-weight:600;font-size:13px";
+    const arrow = document.createElement("span");
+    arrow.id = "arr_" + supId;
+    arrow.style.cssText = "color:#2a5070;margin-right:5px";
+    arrow.textContent = "▶";
+    tdName.appendChild(arrow);
+    tdName.appendChild(document.createTextNode(sup));
+    tr1.appendChild(tdName);
+
+    for (const sh of activeShops) {
+      const td = document.createElement("td");
+      td.style.cssText = "padding:10px;text-align:right;font-size:13px;color:" + (shopVals[sh] ? SHOP_COLORS[sh] : "#2a4060");
+      td.textContent = shopVals[sh] ? fmt(shopVals[sh]) : "-";
+      tr1.appendChild(td);
+    }
+
+    const tdTotal = document.createElement("td");
+    tdTotal.style.cssText = "padding:10px;text-align:right;font-size:13px;font-weight:700;color:#fff";
+    tdTotal.textContent = fmt(supTotal);
+    tr1.appendChild(tdTotal);
+    tbody.appendChild(tr1);
+
+    // Detail row
+    const tr2 = document.createElement("tr");
+    const tdDetail = document.createElement("td");
+    tdDetail.colSpan = activeShops.length + 2;
+    tdDetail.style.padding = "0";
+    const panel = document.createElement("div");
+    panel.className = "detail-panel";
+    panel.id = supId;
+    panel.innerHTML = renderDetailRows(sup, data, activeShops);
+    tdDetail.appendChild(panel);
+    tr2.appendChild(tdDetail);
+    tbody.appendChild(tr2);
+  }
+
+  // Итого row
+  const trTotal = document.createElement("tr");
+  trTotal.style.background = "#1a2d10";
+  const tdTotalName = document.createElement("td");
+  tdTotalName.style.cssText = "padding:10px;color:#8ab870;font-weight:700;font-size:13px";
+  tdTotalName.textContent = "Итого";
+  trTotal.appendChild(tdTotalName);
+  for (const sh of activeShops) {
+    const td = document.createElement("td");
+    td.style.cssText = "padding:10px;text-align:right;font-size:13px;font-weight:700;color:" + SHOP_COLORS[sh];
+    td.textContent = fmt(shopGrand[sh]||0);
+    trTotal.appendChild(td);
+  }
+  const tdGrand = document.createElement("td");
+  tdGrand.style.cssText = "padding:10px;text-align:right;font-size:14px;font-weight:800;color:#ffd760";
+  tdGrand.textContent = fmt(grandTotal);
+  trTotal.appendChild(tdGrand);
+  tbody.appendChild(trTotal);
+
+  if (unknown.length > 0) {
+    document.getElementById("results").insertAdjacentHTML("beforeend", `
+      <div class="unknown-block">
+        <div class="unknown-title">Товары без поставщика (${unknown.length})</div>
+        <div class="unknown-codes">${unknown.join(", ")}</div>
+      </div>
+    `);
+  }
+}
+
+function renderDetailRows(sup, data, activeShops) {
+  // collect all codes for this supplier across all shops
+  const allCodes = {};
+  for (const sh of activeShops) {
+    const items = (data[sup]&&data[sup][sh]||{}).items||{};
+    for (const [code, d] of Object.entries(items)) {
+      if (!allCodes[code]) allCodes[code]={cost:d.cost, name:d.name||"", shops:{}};
+      if (!allCodes[code].name && d.name) allCodes[code].name = d.name;
+      allCodes[code].shops[sh]={qty:d.qty, sum:d.sum};
+    }
+  }
+
+  return Object.entries(allCodes).map(([code, d]) => {
+    let totalSum=0;
+    const name = d.name || "";
+    const shopCells = activeShops.map(sh => {
+      const s=d.shops[sh];
+      if (s) { totalSum+=s.sum; return `<span style="color:${SHOP_COLORS[sh]};text-align:right">${s.qty%1===0?s.qty:s.qty.toFixed(1)}</span>`; }
+      return `<span style="color:#1e3048;text-align:right">-</span>`;
+    }).join("");
+
+    return `
+      <div style="padding:9px 12px;border-top:1px solid #0f1923;font-size:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+          <div style="flex:1;margin-right:8px">
+            <span style="color:#4a7fa5;font-family:monospace;margin-right:8px">${code}</span>
+            <span style="color:#c8dff0;font-weight:600">${name}</span>
+          </div>
+          <span style="color:#4ab8e8;font-weight:700;white-space:nowrap">${fmt(totalSum)} сум</span>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+          <span style="color:#3d6480;font-size:11px">себест: <b style="color:#6a90a8">${fmt(d.cost)} сум</b></span>
+          ${activeShops.map(sh => {
+            const s=d.shops[sh];
+            if (!s) return "";
+            return `<span style="font-size:11px;color:${SHOP_COLORS[sh]}">${sh}: <b>${s.qty%1===0?s.qty:s.qty.toFixed(1)} шт</b></span>`;
+          }).join("")}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function toggleDetail(id) {
+  const panel = document.getElementById(id);
+  const arr = document.getElementById("arr_"+id);
+  const isOpen = panel.classList.contains("open");
+  panel.classList.toggle("open");
+  if (arr) arr.textContent = isOpen ? "▶" : "▼";
+}
+
+// ── EDIT TAB ──────────────────────────────────────────────────────────────────
+function renderEditTab() {
+  const list = document.getElementById("supplierList");
+  list.innerHTML = suppliers.map((s, sIdx) => {
+    const open = openEditSuppliers[sIdx];
+    return `
+      <div class="edit-supplier" draggable="true" id="esup_${sIdx}"
+        ondragstart="dragStart(event,${sIdx})"
+        ondragover="dragOver(event)"
+        ondrop="dragDrop(event,${sIdx})"
+        ondragend="dragEnd()"
+        style="transition:opacity 0.15s">
+        <div class="edit-sup-header">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="color:#2a5070;font-size:18px;cursor:grab;touch-action:none" 
+              onpointerdown="pointerDragStart(event,${sIdx})">⠿</span>
+            <div>
+              <span class="edit-sup-name">${s.name}</span>
+              <span class="edit-sup-count">${s.items.length} товаров</span>
+            </div>
+          </div>
+          <div class="edit-btns">
+            <button style="background:#1e3a54;border:none;border-radius:6px;color:#7aa8c4;cursor:pointer;padding:5px 8px;font-size:14px" onclick="moveSupplier(${sIdx},-1)" ${sIdx===0?'disabled style="opacity:0.3"':''}>↑</button>
+            <button style="background:#1e3a54;border:none;border-radius:6px;color:#7aa8c4;cursor:pointer;padding:5px 8px;font-size:14px" onclick="moveSupplier(${sIdx},1)" ${sIdx===suppliers.length-1?'disabled style="opacity:0.3"':''}>↓</button>
+            <button class="btn-edit" style="background:${open?'#0f4d75':'#1e3a54'}" onclick="toggleEditSup(${sIdx})">${open?"Скрыть":"Изменить"}</button>
+            <button class="btn-del-sup" onclick="removeSup(${sIdx})">✕</button>
+          </div>
+        </div>
+        ${open ? `
+        <div class="edit-body">
+          ${s.items.map(it=>`
+            <div class="item-row">
+              <span class="item-code">${it.code}</span>
+              <input class="item-cost-input" value="${it.cost}" onblur="updateCost(${sIdx},'${it.code}',this.value)"/>
+              <span class="item-unit">сум</span>
+              <button class="btn-del-item" onclick="removeItem(${sIdx},'${it.code}')">✕</button>
+            </div>
+          `).join("")}
+          <div class="add-item-section">
+            <div class="add-item-label">Добавить товар</div>
+            <div class="add-item-row">
+              <input class="code-input" id="nc_${sIdx}" placeholder="Код"/>
+              <input class="cost-input" id="cc_${sIdx}" placeholder="Себестоимость"/>
+              <button class="btn-add-item" onclick="addItem(${sIdx})">+</button>
+            </div>
+          </div>
+        </div>` : ""}
+      </div>
+    `;
+  }).join("");
+}
+
+function moveSupplier(idx, dir) {
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= suppliers.length) return;
+  [suppliers[idx], suppliers[newIdx]] = [suppliers[newIdx], suppliers[idx]];
+  const tmp = openEditSuppliers[idx];
+  openEditSuppliers[idx] = openEditSuppliers[newIdx];
+  openEditSuppliers[newIdx] = tmp;
+  saveToStorage();
+  renderEditTab();
+}
+
+// Drag and drop
+let dragSrcIdx = null;
+function dragStart(e, idx) { dragSrcIdx = idx; e.dataTransfer.effectAllowed = "move"; setTimeout(()=>{ const el=document.getElementById("esup_"+idx); if(el) el.style.opacity="0.4"; },0); }
+function dragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }
+function dragDrop(e, idx) { e.preventDefault(); if (dragSrcIdx===null||dragSrcIdx===idx) return; const s=suppliers.splice(dragSrcIdx,1)[0]; suppliers.splice(idx,0,s); openEditSuppliers={}; saveToStorage(); renderEditTab(); }
+function dragEnd() { dragSrcIdx=null; renderEditTab(); }
+
+// Touch drag (pointer events) — simple long-press approach, use buttons instead
+function pointerDragStart(e, idx) { /* handled by ↑↓ buttons on mobile */ }
+
+function toggleEditSup(i) { openEditSuppliers[i]=!openEditSuppliers[i]; renderEditTab(); }
+function addSupplier() {
+  const name=document.getElementById("newSupplierName").value.trim();
+  if (!name) return;
+  if (suppliers.find(s=>s.name===name)) { showMsg("Поставщик уже есть",false); return; }
+  suppliers.push({name,items:[]});
+  saveToStorage();
+  document.getElementById("newSupplierName").value="";
+  showMsg("✓ Поставщик добавлен",true); renderEditTab();
+}
+function removeSup(i) {
+  if (!confirm("Удалить "+suppliers[i].name+"?")) return;
+  suppliers.splice(i,1); saveToStorage(); delete openEditSuppliers[i]; renderEditTab();
+}
+function addItem(sIdx) {
+  const code=normalizeCode(document.getElementById("nc_"+sIdx).value);
+  const cost=parseInt((document.getElementById("cc_"+sIdx).value||"").replace(/\s/g,""),10);
+  if (!code||isNaN(cost)||cost<=0) { showMsg("Введите код и себестоимость",false); return; }
+  if (suppliers[sIdx].items.find(it=>it.code===code)) { showMsg("Такой код уже есть",false); return; }
+  suppliers[sIdx].items.push({code,cost});
+  saveToStorage();
+  document.getElementById("nc_"+sIdx).value="";
+  document.getElementById("cc_"+sIdx).value="";
+  showMsg("✓ Товар добавлен",true); renderEditTab();
+}
+function removeItem(sIdx, code) {
+  suppliers[sIdx].items=suppliers[sIdx].items.filter(it=>it.code!==code); saveToStorage(); renderEditTab();
+}
+function updateCost(sIdx, code, val) {
+  const cost=parseInt(val.replace(/\s/g,""),10);
+  if (isNaN(cost)||cost<=0) return;
+  const item=suppliers[sIdx].items.find(it=>it.code===code);
+  if (item) { item.cost=cost; saveToStorage(); }
+}
+
+// ── SERVER STORAGE ───────────────────────────────────────────────────────────
+const SERVER_URL = "https://web-production-a7040.up.railway.app";
+
+async function saveToStorage() {
+  try {
+    // Save to localStorage as backup
+    localStorage.setItem('suppliers_data', JSON.stringify(suppliers));
+    // Save to server
+    await fetch(SERVER_URL + '/suppliers', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({suppliers})
+    });
+  } catch(e) {
+    console.log('Save to server failed, using localStorage', e);
+  }
+}
+
+async function loadFromStorage() {
+  try {
+    const resp = await fetch(SERVER_URL + '/suppliers');
+    const data = await resp.json();
+    if (data.ok && data.suppliers && data.suppliers.length > 0) {
+      suppliers = data.suppliers;
+      return true;
+    }
+  } catch(e) {
+    console.log('Load from server failed, trying localStorage', e);
+  }
+  // Fallback to localStorage
+  try {
+    const saved = localStorage.getItem('suppliers_data');
+    if (saved) { suppliers = JSON.parse(saved); return true; }
+  } catch(e) {}
+  return false;
+}
+
+// ── EXPORT / IMPORT ──────────────────────────────────────────────────────────
+function exportData() {
+  const blob = new Blob([JSON.stringify(suppliers, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'поставщики_' + new Date().toLocaleDateString('ru-RU').replace(/\./g,'-') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error();
+      suppliers = data;
+      saveToStorage();
+      openEditSuppliers = {};
+      showMsg('✓ Данные загружены: ' + data.length + ' поставщиков', true);
+      renderEditTab();
+    } catch(err) { showMsg('Ошибка: неверный файл', false); }
+  };
+  reader.readAsText(file);
+  input.value = "";
+}
+
+// ── COPY TO EXCEL ────────────────────────────────────────────────────────────
+function copyToExcel() {
+  const d = window._calcData;
+  if (!d) return;
+  const { data, loadedShops } = d;
+  const activeShops = ["Чорсу","Кадышева","Самарканд"].filter(s => loadedShops.includes(s));
+  const supNames = suppliers.map(s => s.name);
+
+  // Build tab-separated rows: one row per supplier
+  // Columns: Чорсу | Кадышева | Самарканд (only loaded shops, in order)
+  const rows = supNames.map(sup => {
+    return activeShops.map(sh => {
+      const v = data[sup] && data[sup][sh] ? data[sup][sh].total : 0;
+      return v > 0 ? Math.round(v) : ""; // empty if no sales
+    }).join("\t");
+  });
+
+  // Add итого row
+  const totRow = activeShops.map(sh => {
+    let t = 0;
+    for (const sup of supNames) t += (data[sup]&&data[sup][sh]?data[sup][sh].total:0)||0;
+    return t > 0 ? Math.round(t) : "";
+  }).join("\t");
+  rows.push(totRow);
+
+  const text = rows.join("\n");
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector("button[onclick=\"copyToExcel()\"]");
+    if (btn) { btn.textContent = "✓ Скопировано! Вставьте в Excel (Ctrl+V)"; setTimeout(()=>{ btn.innerHTML = "📋 Скопировать для Excel"; }, 3000); }
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    alert("Скопировано! Вставьте в Excel (Ctrl+V)");
+  });
+}
+
+// Auto-save on any change — patch existing functions
+const _origAddSupplier = addSupplier;
+// save after each mutating operation by calling saveToStorage() inside each function
+
+// ── REGOS API ─────────────────────────────────────────────────────────────────
+const PROXY_URL = "https://web-production-a7040.up.railway.app";
+const REGOS_TASHKENT = "https://integration.regos.uz/gateway/out/e731e8c647b7455381ee73cae0696265";
+const REGOS_SAMARKAND = "https://integration.regos.uz/gateway/out/7e05c8de1e0544f4b9577038e95cd007";
+
+// Set default dates (current week Mon-Sun)
+(function setDefaultDates() {
+  const now = new Date();
+  const day = now.getDay() || 7;
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - day + 1);
+  mon.setHours(0,0,0,0);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  sun.setHours(23,59,59,999);
+  const fmt = d => d.toISOString().split('T')[0];
+  const sd = document.getElementById('apiStartDate');
+  const ed = document.getElementById('apiEndDate');
+  if (sd) sd.value = fmt(mon);
+  if (ed) ed.value = fmt(sun);
+})();
+
+async function regosFetch(endpoint, method, payload) {
+  const resp = await fetch(PROXY_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      endpoint: endpoint + "/v1/" + method,
+      payload: payload
+    })
+  });
+  const data = await resp.json();
+  return data;
+}
+
+async function loadAllFromApi() {
+  const startInput = document.getElementById('apiStartDate').value;
+  const endInput = document.getElementById('apiEndDate').value;
+  const statusEl = document.getElementById('apiStatus');
+
+  if (!startInput || !endInput) {
+    statusEl.textContent = "⚠ Укажите период";
+    statusEl.style.color = "#e88060";
+    return;
+  }
+
+  const startDate = Math.floor(new Date(startInput + 'T00:00:00').getTime() / 1000);
+  const endDate = Math.floor(new Date(endInput + 'T23:59:59').getTime() / 1000);
+
+  // Check max 1 month
+  if (endDate - startDate > 31 * 86400) {
+    statusEl.textContent = "⚠ Период не должен превышать 1 месяц";
+    statusEl.style.color = "#e88060";
+    return;
+  }
+
+  statusEl.style.color = "#4a7fa5";
+  statusEl.textContent = "Загружаю кассы...";
+
+  try {
+    // Step 1: Get cashes for Tashkent
+    const cashResp = await regosFetch(REGOS_TASHKENT, "operatingcash/get", {});
+    if (!cashResp.ok) throw new Error("Ошибка получения касс: " + JSON.stringify(cashResp.result));
+
+    const cashes = cashResp.result || [];
+    statusEl.textContent = `Найдено ${cashes.length} касс в Ташкенте. Загружаю продажи...`;
+
+    // Group cashes by stock name
+    const stockMap = {};
+    for (const c of cashes) {
+      const sname = c.stock && c.stock.name ? c.stock.name : "Неизвестно";
+      if (!stockMap[sname]) stockMap[sname] = [];
+      stockMap[sname].push(c.id);
+    }
+
+    // Map stock names to our shop names
+    // Yoyo = Чорсу, Kilo family outlet = Кадышева
+    const shopMapping = {};
+    for (const [sname, ids] of Object.entries(stockMap)) {
+      const lower = sname.toLowerCase();
+      if (lower.includes('yoyo') || lower.includes('йойо') || lower.includes('чорсу')) {
+        shopMapping['Чорсу'] = ids;
+      } else if (lower.includes('kilo') || lower.includes('кило') || lower.includes('кадыш')) {
+        shopMapping['Кадышева'] = ids;
+      }
+    }
+
+    // Step 2: Load sales for each Tashkent shop
+    const apiData = {};
+    const apiNames = {};
+
+    for (const [shopName, cashIds] of Object.entries(shopMapping)) {
+      statusEl.textContent = `Загружаю ${shopName}...`;
+      let offset = 0;
+      let allItems = [];
+      while (true) {
+        const r = await regosFetch(REGOS_TASHKENT, "retailreport/operations", {
+          operating_cash_ids: cashIds,
+          start_date: startDate,
+          end_date: endDate,
+          limit: 100,
+          offset: offset
+        });
+        if (!r.ok) break;
+        const items = r.result || [];
+        allItems = allItems.concat(items);
+        if (items.length < 100) break;
+        offset += 100;
+      }
+      apiData[shopName] = allItems;
+    }
+
+    // Step 3: Load Samarkand
+    statusEl.textContent = "Загружаю Самарканд...";
+    let samOffset = 0, samItems = [];
+    while (true) {
+      const r = await regosFetch(REGOS_SAMARKAND, "retailreport/operations", {
+        start_date: startDate,
+        end_date: endDate,
+        limit: 100,
+        offset: samOffset
+      });
+      if (!r.ok) break;
+      const items = r.result || [];
+      samItems = samItems.concat(items);
+      if (items.length < 100) break;
+      samOffset += 100;
+    }
+    apiData['Самарканд'] = samItems;
+
+    statusEl.textContent = `✓ Загружено: Чорсу ${(apiData['Чорсу']||[]).length} товаров, Кадышева ${(apiData['Кадышева']||[]).length}, Самарканд ${samItems.length}`;
+    statusEl.style.color = "#8ab870";
+
+    // Step 4: Calculate using our supplier list
+    processApiData(apiData);
+
+  } catch(e) {
+    statusEl.textContent = "Ошибка: " + e.message;
+    statusEl.style.color = "#e88080";
+    console.error(e);
+  }
+}
+
+function processApiData(apiData) {
+  const lookup = buildLookup();
+  const data = {};
+  const unknown = [];
+  const loadedShops = Object.keys(apiData);
+
+  for (const [shop, items] of Object.entries(apiData)) {
+    for (const item of items) {
+      const rawCode = String(item.item && item.item.code ? item.item.code : "").trim();
+      if (!rawCode) continue;
+      const code = normalizeCode(rawCode);
+      if (!code) continue;
+
+      // net quantity = sales - returns
+      const qty = (item.sale_quantity || 0) - (item.return_quantity || 0);
+      if (qty <= 0) continue;
+
+      const name = item.item && item.item.name ? item.item.name : "";
+
+      if (lookup[code]) {
+        const {supplier, cost} = lookup[code];
+        const sum = qty * cost;
+        if (!data[supplier]) data[supplier] = {};
+        if (!data[supplier][shop]) data[supplier][shop] = {total:0, items:{}};
+        data[supplier][shop].total += sum;
+        if (!data[supplier][shop].items[code]) data[supplier][shop].items[code] = {qty:0, cost, sum:0, name};
+        data[supplier][shop].items[code].qty += qty;
+        data[supplier][shop].items[code].sum += sum;
+      } else {
+        if (!unknown.includes(code)) unknown.push(code);
+      }
+    }
+  }
+
+  window._calcData = { data, unknown, loadedShops };
+  renderResults(data, unknown, loadedShops);
+
+  // Clear file uploads
+  uploadedFiles = [];
+  renderFileList();
+}
+
+// Load on startup
+(async function() {
+  await loadFromStorage();
+  // Re-render edit tab if open
+  if (document.getElementById('tab-edit') && document.getElementById('tab-edit').style.display !== 'none') {
+    renderEditTab();
+  }
+})();
+</script>
+</body>
+</html>
