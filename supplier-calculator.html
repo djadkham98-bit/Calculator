@@ -2502,8 +2502,8 @@ function gToggle(id){gExpanded[id]=!gExpanded[id];gRender();}
 
 async function gLoadOps(id,doc){
   try{
-    const res=await gFetch('purchaseoperation/get',{doc_purchase_id:id});
-    if(!res.ok)throw new Error(res.error);
+    const res=await gFetch('purchaseoperation/get',{document_ids:[parseInt(id)||id],limit:200,offset:0});
+    if(!res?.ok)throw new Error(res?.error||res?.result?.message||'API error');
     const ops=res.result||[];doc.operations=ops;
     const cell=document.getElementById('gOps_'+id);if(!cell)return;
     if(!ops.length){cell.textContent='Позиции не найдены';return;}
