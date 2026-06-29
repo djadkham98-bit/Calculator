@@ -218,6 +218,23 @@ body { background: #0f1923; color: #e8e0d4; font-family: 'Inter', sans-serif; mi
   /* Expand table container scroll as fallback */
   .goods-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
+/* TOP ITEMS (revenue screen) */
+.top-card{background:#162230;border:1px solid #1e3048;border-radius:14px;padding:16px 18px;margin-bottom:14px}
+.top-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.top-lbl{font-size:10px;color:#4a7fa5;letter-spacing:2px;text-transform:uppercase;font-weight:600}
+.top-toggle{display:flex;border-radius:8px;overflow:hidden;border:1px solid #1e3048}
+.top-btn{padding:5px 12px;border:none;cursor:pointer;font-size:11px;font-weight:600;transition:background .15s;white-space:nowrap}
+.top-btn.active{background:#1a6b9e;color:#fff}
+.top-btn.inactive{background:#162230;color:#4a7fa5}
+.top-btn.inactive:hover{background:#1e3048;color:#7aa8c4}
+.top-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #111d27}
+.top-row:last-child{border-bottom:none}
+.top-rank{font-size:15px;width:24px;flex-shrink:0;text-align:center}
+.top-name{font-size:13px;color:#c8dff0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top-val{font-size:13px;font-weight:700;color:#fff;text-align:right;flex-shrink:0;white-space:nowrap}
+.top-sub{font-size:10px;color:#4a6080;text-align:right}
+.top-bar-wrap{width:100%;background:#1e3048;border-radius:2px;height:3px;margin-top:5px}
+.top-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#1a6b9e,#3a9ede);transition:width .5s ease}
 </style>
 </head>
 <body>
@@ -432,6 +449,7 @@ body { background: #0f1923; color: #e8e0d4; font-family: 'Inter', sans-serif; mi
     <div id="revStatus" style="font-size:12px;color:#4a7fa5;min-height:18px;margin-bottom:8px;text-align:center"></div>
     <div id="revWarnings"></div>
     <div id="revResults"></div>
+    <div id="rev-top-items"></div>
   </div>
 </div>
 
@@ -631,7 +649,7 @@ let suppliers = [
     {code:"000632",cost:95000},{code:"000638",cost:115000},{code:"000649",cost:93000},
     {code:"000683",cost:85000},{code:"000711",cost:165000},{code:"000712",cost:19000},
     {code:"000722",cost:220000},{code:"000724",cost:180000},{code:"000763",cost:85000},
-    {code:"000770",cost:55000},{code:"000771",cost:90000},{code:"000777",cost:105000},
+    {code:"000770",cost:60000},{code:"000771",cost:90000},{code:"000777",cost:105000},
     {code:"000790",cost:80000},{code:"000791",cost:185000},{code:"000857",cost:230000},
     {code:"000956",cost:90000},{code:"000998",cost:70000},{code:"001025",cost:16000},
     {code:"001054",cost:65000},{code:"003504",cost:55000},{code:"003552",cost:70000},
@@ -1169,8 +1187,9 @@ const SERVER_URL = "https://web-production-a7040.up.railway.app";
 
 async function saveToStorage() {
   try {
-    // Save to localStorage as backup
+    // Save to localStorage as backup (with checksum for stale-cache detection)
     localStorage.setItem('suppliers_data', JSON.stringify(suppliers));
+    localStorage.setItem('suppliers_checksum', _suppChecksum());
     // Save to server
     await fetch(SERVER_URL + '/suppliers', {
       method: 'POST',
@@ -1179,6 +1198,47 @@ async function saveToStorage() {
     });
   } catch(e) {
   }
+}
+
+// Checksum of the hardcoded supplier list — update this whenever prices/codes change
+function _suppChecksum() {
+  // Sum of all costs in the DEFAULT hardcoded list
+  const defaults = [
+    {code:"000237",cost:65000},{code:"000314",cost:60000},{code:"000350",cost:50000},
+    {code:"000418",cost:70000},{code:"000419",cost:55000},{code:"000420",cost:45000},
+    {code:"000491",cost:55000},{code:"000519",cost:55000},{code:"000538",cost:65000},
+    {code:"000545",cost:60000},{code:"000573",cost:75000},{code:"000574",cost:65000},
+    {code:"000632",cost:95000},{code:"000638",cost:115000},{code:"000649",cost:93000},
+    {code:"000683",cost:85000},{code:"000711",cost:165000},{code:"000712",cost:19000},
+    {code:"000722",cost:220000},{code:"000724",cost:180000},{code:"000763",cost:85000},
+    {code:"000770",cost:60000},{code:"000771",cost:90000},{code:"000777",cost:105000},
+    {code:"000790",cost:80000},{code:"000791",cost:185000},{code:"000857",cost:230000},
+    {code:"000956",cost:90000},{code:"000998",cost:70000},{code:"001025",cost:16000},
+    {code:"001054",cost:65000},{code:"003504",cost:55000},{code:"003552",cost:70000},
+    {code:"003602",cost:70000},{code:"003629",cost:19000},{code:"003630",cost:61000},
+    {code:"003647",cost:55000},{code:"003653",cost:70000},{code:"003668",cost:60000},
+    {code:"003669",cost:85000},{code:"003909",cost:70000},{code:"003978",cost:75000},
+    {code:"003996",cost:55000},
+    {code:"000444",cost:68000},{code:"000445",cost:53000},{code:"003910",cost:68000},{code:"003911",cost:53000},
+    {code:"001096",cost:113000},{code:"004004",cost:113000},
+    {code:"000938",cost:155000},{code:"000939",cost:155000},{code:"000940",cost:130000},
+    {code:"000941",cost:130000},{code:"000942",cost:140000},{code:"000943",cost:150000},
+    {code:"000944",cost:150000},{code:"000945",cost:150000},{code:"000946",cost:150000},
+    {code:"000947",cost:150000},{code:"000948",cost:165000},{code:"000949",cost:165000},
+    {code:"000950",cost:165000},{code:"000951",cost:165000},{code:"000952",cost:155000},
+    {code:"000953",cost:155000},{code:"000954",cost:155000},{code:"001026",cost:70000},
+    {code:"000639",cost:120000},{code:"000650",cost:120000},{code:"000756",cost:120000},
+    {code:"000865",cost:70000},{code:"000866",cost:75000},{code:"000957",cost:58000},
+    {code:"001015",cost:40000},{code:"001024",cost:35000},{code:"001027",cost:25000},{code:"001028",cost:20000},
+    {code:"001022",cost:80000},{code:"001023",cost:115000},
+    {code:"001038",cost:105000},
+    {code:"001057",cost:60000},{code:"001058",cost:35000},{code:"001059",cost:18000},
+    {code:"001060",cost:28000},{code:"001061",cost:75000},{code:"001062",cost:35000},
+    {code:"001088",cost:30000},{code:"001106",cost:25000},{code:"001107",cost:30000},
+    {code:"003960",cost:60000},{code:"003961",cost:35000},{code:"003962",cost:28000},
+    {code:"003963",cost:18000},{code:"003964",cost:75000},{code:"003965",cost:35000}
+  ];
+  return String(defaults.reduce((s, i) => s + i.cost, 0));
 }
 
 async function loadFromStorage() {
@@ -1191,10 +1251,19 @@ async function loadFromStorage() {
     }
   } catch(e) {
   }
-  // Fallback to localStorage
+  // Fallback to localStorage — but only if checksum matches current hardcoded list
   try {
     const saved = localStorage.getItem('suppliers_data');
-    if (saved) { suppliers = JSON.parse(saved); return true; }
+    const savedChecksum = localStorage.getItem('suppliers_checksum');
+    const currentChecksum = _suppChecksum();
+    if (saved && savedChecksum === currentChecksum) {
+      suppliers = JSON.parse(saved);
+      return true;
+    } else if (saved) {
+      // Stale cache — clear it so hardcoded defaults are used
+      localStorage.removeItem('suppliers_data');
+      localStorage.removeItem('suppliers_checksum');
+    }
   } catch(e) {}
   return false;
 }
@@ -2097,6 +2166,7 @@ const REV_EP_S="https://integration.regos.uz/gateway/out/7e05c8de1e0544f4b957703
 const REV_EP_B="https://integration.regos.uz/gateway/out/9011d723112b4dfe86f41839fdf603f7";
 
 let revActive=new Set(REV_STORES.map(s=>s.id)),revSortByRev=false,revLoading=false,revLastData=null,revCurRange=null;
+let revTopMode='qty',revLastTopItems=null;
 const revDp={s:null,e:null,sel:false,vy:new Date().getFullYear(),vm:new Date().getMonth()};
 const revMRU=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const revDRU=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
@@ -2193,7 +2263,7 @@ async function revLoadData(){
   const{start,end,label}=revCurRange;
   revSt('Загружаю данные...','#4a7fa5');
   const wEl=document.getElementById('revWarnings');if(wEl)wEl.innerHTML='';
-  const rEl=document.getElementById('revResults');if(rEl)rEl.innerHTML=revSkel();
+  const rEl=document.getElementById('revResults');if(rEl)rEl.innerHTML=revSkel();const tEl=document.getElementById('rev-top-items');if(tEl)tEl.innerHTML='';
   try{
     const[cT,cS,cR]=await Promise.all([
       revFetch(REV_EP_T,'operatingcash/get',{}),
@@ -2220,12 +2290,55 @@ async function revLoadData(){
     });
     const allItems=await Promise.all(tasks);
     const storeData=REV_STORES.map((st,i)=>({...st,...revProc(allItems[i],st.src==='bonasera'?null:cm)}));
-    revLastData=storeData;revRender(storeData);
+    revLastData=storeData;revRender(storeData);revLastTopItems=revBuildTopItems(allItems.flat());revRenderTopItems();
     revSt(`✓ ${label}  ·  ${REV_STORES.length} магазинов`,'#8ab870');
   }catch(err){
     console.error(err);revSt('Ошибка: '+err.message,'#e88080');
     if(rEl)rEl.innerHTML=`<div style="background:#2d1a1a;border:1px solid #6b2d2d;border-radius:10px;padding:14px;color:#e88080;font-size:13px">Ошибка загрузки: ${err.message}</div>`;
   }finally{revLoading=false;if(btn){btn.disabled=false;btn.innerHTML='⟳ Обновить';}}
+}
+// REV TOP ITEMS
+function revBuildTopItems(ops){
+  const map={};
+  for(const it of ops){
+    const nQ=(it.sale_quantity||0)-(it.return_quantity||0);
+    const nR=(it.sale_amount||0)-(it.return_amount||0);
+    if(nQ<=0&&nR<=0)continue;
+    const name=(it.item?.name||''). trim()||'\u2014';
+    if(!map[name])map[name]={qty:0,rev:0};
+    if(nQ>0)map[name].qty+=nQ;
+    if(nR>0)map[name].rev+=nR;
+  }
+  return Object.entries(map).map(([name,v])=>({name,qty:v.qty,rev:v.rev}));
+}
+function revSetTopMode(m){
+  revTopMode=m;
+  document.getElementById('revTopBtnQty').className='top-btn '+(m==='qty'?'active':'inactive');
+  document.getElementById('revTopBtnRev').className='top-btn '+(m==='rev'?'active':'inactive');
+  revRenderTopItems();
+}
+function revRenderTopItems(){
+  const el=document.getElementById('rev-top-items');
+  if(!el||!revLastTopItems||!revLastTopItems.length){if(el)el.innerHTML='';return;}
+  const sorted=[...revLastTopItems].sort((a,b)=>revTopMode==='qty'?b.qty-a.qty:b.rev-a.rev);
+  const top5=sorted.slice(0,5);
+  const maxVal=top5[0]?(revTopMode==='qty'?top5[0].qty:top5[0].rev):1;
+  const medals=['🥇','🥈','🥉','4️⃣','5️⃣'];
+  let html='<div class="top-card"><div class="top-head"><span class="top-lbl">🔥 Топ-5 товаров</span><div class="top-toggle">'
+    +'<button class="top-btn '+(revTopMode==='qty'?'active':'inactive')+'" id="revTopBtnQty" onclick="revSetTopMode(\'qty\')">По штукам</button>'
+    +'<button class="top-btn '+(revTopMode==='rev'?'active':'inactive')+'" id="revTopBtnRev" onclick="revSetTopMode(\'rev\')">По сумме</button></div></div>';
+  top5.forEach(function(item,i){
+    const val=revTopMode==='qty'?item.qty:item.rev;
+    const valStr=revTopMode==='qty'?(item.qty.toLocaleString('ru-RU')+' шт'):(Math.round(item.rev).toLocaleString('ru-RU')+' сум');
+    const sub=revTopMode==='qty'?(Math.round(item.rev).toLocaleString('ru-RU')+' сум'):(item.qty.toLocaleString('ru-RU')+' шт');
+    const barPct=maxVal>0?((val/maxVal)*100).toFixed(1):0;
+    html+='<div class="top-row"><div class="top-rank">'+medals[i]+'</div>'
+      +'<div style="flex:1;overflow:hidden"><div class="top-name">'+item.name+'</div>'
+      +'<div class="top-bar-wrap"><div class="top-bar-fill" style="width:'+barPct+'%"></div></div></div>'
+      +'<div><div class="top-val">'+valStr+'</div><div class="top-sub">'+sub+'</div></div></div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
 }
 function revProc(items,cm){
   let rev=0,units=0,pos=0,cost=0,ci=0;
@@ -3329,727 +3442,4 @@ async function gPerformDoc(id, doPerform) {
       toast.innerHTML = `
         <div style="color:#e8a860;font-weight:700;margin-bottom:8px">🔒 Статус закрытия периодов</div>
         <div style="margin-bottom:6px">Последнее закрытие до: <b style="color:#fff">${dateStr}</b></div>
-        <div style="font-size:11px;color:#4a7fa5;margin-bottom:6px">Все закрытые периоды:</div>
-        ${allRows}
-        <div style="margin-top:8px;font-size:11px;color:#4a7fa5">Документы с датой ≤ ${dateStr} нельзя провести</div>
-      `;
-    }
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:8px;right:10px;background:none;border:none;color:#4a7fa5;font-size:16px;cursor:pointer';
-    closeBtn.onclick = () => toast.remove();
-    toast.style.position = 'fixed';
-    toast.appendChild(closeBtn);
-    document.body.appendChild(toast);
-    console.log('[periodClosing] raw result:', JSON.stringify(res.result));
-  } catch(e) { console.error('[periodClosing] error:', e); }
-})();
-
-// ── DOCUMENT EDITOR ──────────────────────────────────────────────────────────
-let gEdDocId = null;
-let gEdDocData = null;
-let gEdOps = [];
-let gEdIsPerformed = false;
-let gEdItemSearchMode = false;
-let gEdDirty = new Set(); // indices of rows with unsaved changes
-
-async function gOpenEditor(docId, docData) {
-  gEdDocId = docId;
-  gEdDocData = docData || null;
-  gEdOps = [];
-  gEdIsPerformed = !!(docData?.is_performed ?? docData?.performed);
-  gEdItemSearchMode = false;
-  gEdDirty = new Set();
-
-  document.getElementById('gEditModal').style.display = 'block';
-  document.body.style.overflow = 'hidden';
-
-  // Header
-  const num     = docData?.document_number || docData?.number || ('ID:' + docId);
-  const partner = docData?.partner?.name || docData?.partner_name || '—';
-  const store   = docData?.store?.name || docData?.stock?.name || docData?.warehouse?.name || '—';
-  const ds      = docData?.date ? new Date(docData.date * 1000).toLocaleDateString('ru-RU') : '';
-  document.getElementById('gEdDocTitle').textContent = `Накладная ${num}`;
-  document.getElementById('gEdDocMeta').textContent  = [partner, store, ds].filter(Boolean).join(' · ');
-  document.getElementById('gEdStatus').textContent   = '';
-  document.getElementById('gEdOpStatus').textContent = '';
-  gEdUpdatePerformBtn();
-
-  document.getElementById('gEdTbody').innerHTML =
-    '<tr><td colspan="6" style="padding:30px;color:#4a7fa5;font-size:13px;text-align:center">Загружаю позиции...</td></tr>';
-
-  try {
-    const res = await gFetch('purchaseoperation/get', {document_ids: [parseInt(docId)], limit: 200, offset: 0});
-    if (!res?.ok) throw new Error(res?.result?.description || 'API error');
-    gEdOps = res.result || [];
-    // If we have data in local cache with operations, prefer API result
-    if (gEdDocData && !gEdDocData.operations) gEdDocData.operations = gEdOps;
-    gEdRender();
-
-    // Auto-fix: if document has no price_type set, apply it via docpurchase/edit
-    // This fixes "Текущая цена" not showing in Regos Store Management
-    if (!gEdDocData?.price_type?.id) {
-      gEdAutoFixPriceType(docId);
-    }
-  } catch(e) {
-    document.getElementById('gEdTbody').innerHTML =
-      `<tr><td colspan="6" style="padding:20px;color:#e88080;font-size:13px;text-align:center">Ошибка загрузки: ${e.message}</td></tr>`;
-  }
-}
-
-async function gEdAutoFixPriceType(docId) {
-  try {
-    const ptRes = await gFetch('pricetype/get', {limit: 100, offset: 0});
-    const ptArr = Array.isArray(ptRes.result) ? ptRes.result : [];
-    if (!ptArr.length) return;
-    // Prefer "Розничная цена", otherwise first price type
-    const retail = ptArr.find(p => (p.name || '').toLowerCase().includes('розн')) || ptArr[0];
-    const editRes = await gFetch('docpurchase/edit', {id: parseInt(docId), price_type_id: retail.id});
-    if (editRes.ok) {
-      if (gEdDocData) gEdDocData.price_type = retail;
-      const st = document.getElementById('gEdStatus');
-      if (st) {
-        st.textContent = `✅ Вид цены установлен: ${retail.name}`;
-        st.style.color = '#6bd490';
-        setTimeout(() => { if (st.textContent.startsWith('✅ Вид цены')) st.textContent = ''; }, 3000);
-      }
-      // Also update in gDocsData so list view reflects it
-      if (gDocsData) {
-        const idx = gDocsData.findIndex(d => String(d.id) === String(docId));
-        if (idx >= 0) gDocsData[idx].price_type = retail;
-      }
-    }
-  } catch(e) { /* silently ignore */ }
-}
-
-// Open editor for an existing doc by ID (find in gDocsData)
-function gOpenEditorForDoc(docId) {
-  const doc = (gDocsData || []).find(d => String(d.id) === String(docId));
-  gOpenEditor(docId, doc || {id: docId, document_number: docId, is_performed: false});
-}
-
-function gEdUpdatePerformBtn() {
-  const btn   = document.getElementById('gEdPerformBtn');
-  const badge = document.getElementById('gEdPerformedBadge');
-  if (!btn) return;
-  if (gEdIsPerformed) {
-    btn.textContent   = '✕ Отменить проводку';
-    btn.style.background = 'linear-gradient(135deg,#7a5a10,#5a4010)';
-    btn.style.color   = '#f0d070';
-    if (badge) { badge.textContent = 'Проведён'; badge.style.cssText += ';background:#1a3a0a;color:#6bd490;'; }
-  } else {
-    btn.textContent   = '✓ Провести документ';
-    btn.style.background = 'linear-gradient(135deg,#1a9e6b,#0f754d)';
-    btn.style.color   = '#fff';
-    if (badge) { badge.textContent = 'Черновик'; badge.style.cssText += ';background:#1a2a3a;color:#7abde8;'; }
-  }
-}
-
-function gEdRender() {
-  const tb = document.getElementById('gEdTbody');
-  if (!tb) return;
-  if (!gEdOps.length) {
-    tb.innerHTML = '<tr><td colspan="13" style="padding:30px;color:#4a7fa5;font-size:13px;text-align:center">Нет позиций — добавьте товары кнопкой выше</td></tr>';
-    document.getElementById('gEdTotal').textContent = '—';
-    document.getElementById('gEdTotalCost').textContent = '—';
-    return;
-  }
-  const inp = (id, val, step, oninput, extraStyle) =>
-    `<input type="number" id="${id}" value="${val}" step="${step}" min="0"
-      style="text-align:right;width:100%;background:#0f1923;border:1px solid #2a4060;border-radius:5px;padding:4px 6px;color:#c8dff0;font-size:12px;${extraStyle||''}"
-      oninput="${oninput}">`;
-
-  let h = '';
-  gEdOps.forEach((op, i) => {
-    const name    = op.item?.name    || op.name    || op.item_name || '—';
-    const code    = op.item?.code    || op.item?.article || '';
-    const itemId  = op.item?.id      || op.item_id || '';
-    const unit    = op.item?.unit?.name || op.item?.unit_name || '';
-    const qty     = op.quantity ?? 0;
-    const cost    = op.cost    ?? op.price ?? 0;
-    const opId    = op.id;
-    // stored extra data (fetched async)
-    const barcode  = op._barcode  || '';
-    const price    = op._price    || 0;
-    const curPrice = op._curPrice || price;
-    const markup   = (cost > 0 && price > 0) ? ((price - cost) / cost * 100).toFixed(1) : '';
-    const sumCost  = qty * cost;
-    const sumPrice = qty * price;
-    const fmt      = v => v ? Math.round(v).toLocaleString('ru-RU') : '—';
-
-    h += `<tr id="gEdRow_${i}" style="border-bottom:1px solid #0d1e2e">
-      <td style="padding:5px 5px;text-align:center;color:#3d6080;font-size:11px;width:24px">${i+1}</td>
-      <td style="padding:5px 5px;width:62px">
-        <div style="font-size:11px;color:#5a8ab0">${code}</div>
-        <input type="hidden" id="gEdItemId_${i}" value="${itemId}">
-      </td>
-      <td style="padding:5px 8px;min-width:130px">
-        <div style="font-size:12px;color:#c8dff0">${name}</div>
-      </td>
-      <td style="padding:5px 5px;text-align:center;width:44px">
-        <div id="gEdUnit_${i}" style="font-size:11px;color:#5a8ab0">${unit}</div>
-      </td>
-      <td style="padding:4px 4px;width:80px">
-        ${inp(`gEdQty_${i}`, qty, '0.001', `gEdCalc(${i},'qty')`)}
-      </td>
-      <td style="padding:4px 4px;width:110px">
-        <div style="display:flex;gap:2px;align-items:center">
-          ${inp(`gEdCost_${i}`, cost, '100', `gEdCalc(${i},'cost')`)}
-          <button title="Последняя себестоимость" onclick="gEdFetchLastCost(${i})"
-            style="padding:2px 4px;border-radius:5px;border:1px solid #2a4060;background:#0d1825;color:#5a8ab0;font-size:11px;cursor:pointer;flex-shrink:0">🕐</button>
-        </div>
-      </td>
-      <td style="padding:5px 5px;text-align:right;width:96px;font-size:12px;color:#a8c8e8;font-weight:600" id="gEdSumCost_${i}">${fmt(sumCost)}</td>
-      <td style="padding:5px 5px;width:110px">
-        <div id="gEdBarcode_${i}" style="font-size:10px;color:#4a6080;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:108px">${barcode}</div>
-      </td>
-      <td style="padding:4px 4px;width:96px">
-        ${inp(`gEdPrice_${i}`, price||'', '100', `gEdCalc(${i},'price')`, 'color:#7abde8')}
-      </td>
-      <td style="padding:4px 4px;width:64px">
-        <input type="number" id="gEdMarkup_${i}" value="${markup}" step="0.1" placeholder="0"
-          style="text-align:right;width:100%;background:#0f1923;border:1px solid #2a4060;border-radius:5px;padding:4px 6px;color:#8aaa70;font-size:12px"
-          oninput="gEdCalc(${i},'markup')">
-      </td>
-      <td style="padding:5px 5px;text-align:right;width:96px;font-size:12px;color:#c8e8a8;font-weight:600" id="gEdSum_${i}">${fmt(sumPrice)}</td>
-      <td style="padding:5px 5px;text-align:right;width:90px;font-size:12px;color:#5a8ab0" id="gEdCurPrice_${i}">${curPrice ? Math.round(curPrice).toLocaleString('ru-RU') : '—'}</td>
-      <td style="padding:3px 4px;text-align:center;width:24px">
-        <button onclick="gEdDeleteRow(${i},${opId})" title="Удалить"
-          style="background:none;border:none;color:#4a2020;font-size:14px;cursor:pointer;padding:2px 4px">✕</button>
-      </td>
-    </tr>`;
-
-    // Async-fetch extra data if missing
-    if (itemId && (!unit || !barcode || !price)) gEdFetchRowData(i, itemId);
-  });
-  tb.innerHTML = h;
-  gEdUpdateTotals();
-}
-
-function gEdCalc(i, changed) {
-  gEdDirty.add(i); // mark row as changed
-  const qty     = parseFloat(document.getElementById(`gEdQty_${i}`)?.value    || 0);
-  const cost    = parseFloat(document.getElementById(`gEdCost_${i}`)?.value   || 0);
-  const priceEl  = document.getElementById(`gEdPrice_${i}`);
-  const markupEl = document.getElementById(`gEdMarkup_${i}`);
-  let price  = parseFloat(priceEl?.value  || 0);
-  let markup = parseFloat(markupEl?.value || 0);
-  const fmt = v => v ? Math.round(v).toLocaleString('ru-RU') : '—';
-
-  if (changed === 'markup') {
-    if (cost > 0) { price = cost * (1 + markup / 100); if (priceEl) priceEl.value = Math.round(price); }
-  } else {
-    if (cost > 0 && price > 0 && markupEl) { const m = (price - cost) / cost * 100; markupEl.value = m.toFixed(1); }
-  }
-  const sc = document.getElementById(`gEdSumCost_${i}`); if (sc) sc.textContent = (qty && cost)  ? fmt(qty * cost)  : '—';
-  const ss = document.getElementById(`gEdSum_${i}`);     if (ss) ss.textContent = (qty && price) ? fmt(qty * price) : '—';
-  gEdUpdateTotals();
-}
-
-function gEdUpdateTotals() {
-  let tCost = 0, tAmt = 0;
-  gEdOps.forEach((_, j) => {
-    const qty   = parseFloat(document.getElementById(`gEdQty_${j}`)?.value   || gEdOps[j]?.quantity || 0);
-    const cost  = parseFloat(document.getElementById(`gEdCost_${j}`)?.value  || gEdOps[j]?.cost     || 0);
-    const price = parseFloat(document.getElementById(`gEdPrice_${j}`)?.value || gEdOps[j]?._price   || 0);
-    tCost += qty * cost;
-    tAmt  += qty * price;
-  });
-  const fmt = v => v ? Math.round(v).toLocaleString('ru-RU') + ' сум' : '—';
-  const tc = document.getElementById('gEdTotalCost'); if (tc) tc.textContent = fmt(tCost);
-  const ta = document.getElementById('gEdTotal');     if (ta) ta.textContent = fmt(tAmt);
-}
-
-async function gEdFetchRowData(i, itemId) {
-  try {
-    const [prRes, bcRes] = await Promise.all([
-      gFetch('itemprice/get', {item_ids: [parseInt(itemId)], limit: 5, offset: 0}),
-      gFetch('barcode/get',   {item_ids: [parseInt(itemId)], limit: 5, offset: 0})
-    ]);
-    const prArr = Array.isArray(prRes.result) ? prRes.result : [];
-    const docPriceTypeId = gEdDocData?.price_type?.id;
-    const entry = (docPriceTypeId
-      ? prArr.find(p => (p.price_type?.id ?? p.price_type_id) === docPriceTypeId)
-      : null) || prArr.find(p => p.price_type_id === 1) || prArr[0];
-    const price = entry?.price ?? entry?.value ?? 0;
-    if (price > 0) {
-      const hadNoPrice = !(gEdOps[i]?.price > 0);
-      gEdOps[i]._price    = price;
-      gEdOps[i]._curPrice = price;
-      const pEl = document.getElementById(`gEdPrice_${i}`);
-      const cEl = document.getElementById(`gEdCurPrice_${i}`);
-      if (pEl && !pEl.value) { pEl.value = price; gEdCalc(i, 'price'); }
-      if (cEl) cEl.textContent = Math.round(price).toLocaleString('ru-RU') + ' сум';
-      // If the stored operation had no price, persist it immediately via edit
-      if (hadNoPrice && gEdOps[i]?.id) {
-        const op = gEdOps[i];
-        const qty  = parseFloat(document.getElementById(`gEdQty_${i}`)?.value  || op.quantity || 1);
-        const cost = parseFloat(document.getElementById(`gEdCost_${i}`)?.value || op.cost     || 0);
-        gFetch('purchaseoperation/edit', [{id: op.id, quantity: qty, cost: cost, price: price, vat_value: 0}])
-          .then(() => { if (gEdOps[i]) { gEdOps[i].price = price; gEdDirty.delete(i); } })
-          .catch(() => {});
-      }
-    }
-    const bcArr = Array.isArray(bcRes.result) ? bcRes.result : [];
-    const bc = bcArr.map(b => b.barcode||b.value||'').find(s => s && s.length > 2);
-    if (bc) {
-      gEdOps[i]._barcode = bc;
-      const bEl = document.getElementById(`gEdBarcode_${i}`);
-      if (bEl && !bEl.textContent) bEl.textContent = bc;
-    }
-    // Unit
-    const itemRes = await gFetch('item/get', {ids: [parseInt(itemId)], limit: 1, offset: 0});
-    const itemArr = Array.isArray(itemRes.result) ? itemRes.result : [];
-    const unit = itemArr[0]?.unit?.name || itemArr[0]?.unit_name || '';
-    if (unit) {
-      const uEl = document.getElementById(`gEdUnit_${i}`);
-      if (uEl) uEl.textContent = unit;
-    }
-  } catch(e) {}
-}
-
-async function gEdFetchLastCost(i) {
-  const itemId = parseInt(document.getElementById(`gEdItemId_${i}`)?.value || 0);
-  if (!itemId) return;
-  const btn = document.querySelector(`#gEdRow_${i} button[title="Последняя себестоимость"]`);
-  if (btn) { btn.textContent = '⟳'; btn.disabled = true; }
-  try {
-    // Check cache first
-    if (window.G_COST_CACHE && G_COST_CACHE[String(itemId)]) {
-      const el = document.getElementById(`gEdCost_${i}`);
-      if (el) { el.value = G_COST_CACHE[String(itemId)]; gEdCalc(i, 'cost'); }
-      return;
-    }
-    const nowSec = Math.floor(Date.now() / 1000);
-    const WIN = 90 * 86400;
-    let lastCost = 0;
-    // Ищем по документам: newest-first, батчи по 5, фильтр item_ids=[itemId]
-    outer: for (let w = 0; w < 10 && !lastCost; w++) {
-      const wEnd = nowSec - w * WIN, wStart = wEnd - WIN;
-      const docs = (await gFetch('docpurchase/get', {start_date: wStart, end_date: wEnd, limit: 200, offset: 0}))?.result;
-      if (!Array.isArray(docs) || !docs.length) continue;
-      for (let ci = docs.length - 1; ci >= 0 && !lastCost; ci -= 5) {
-        const chunk = docs.slice(Math.max(0, ci - 4), ci + 1);
-        const results = await Promise.all(chunk.map(d =>
-          gFetch('purchaseoperation/get', {document_ids: [d.id], item_ids: [itemId], limit: 10, offset: 0})
-        ));
-        for (const opsRes of results) {
-          const op = (opsRes?.result || []).find(o => (o.last_purchase_cost ?? o.cost ?? 0) > 0);
-          if (op) { lastCost = op.last_purchase_cost || op.cost; break outer; }
-        }
-      }
-    }
-    if (!lastCost) { alert('Себестоимость не найдена'); return; }
-    if (!window.G_COST_CACHE) window.G_COST_CACHE = {};
-    G_COST_CACHE[String(itemId)] = lastCost;
-    const el = document.getElementById(`gEdCost_${i}`);
-    if (el) { el.value = lastCost; gEdCalc(i, 'cost'); gEdDirty.add(i); }
-  } catch(e) {
-    alert('Ошибка: ' + e.message);
-  } finally {
-    if (btn) { btn.textContent = '🕐'; btn.disabled = false; }
-  }
-}
-
-function gEdFillMenuToggle() {
-  const m = document.getElementById('gEdFillMenu');
-  if (m) m.style.display = m.style.display === 'none' ? 'block' : 'none';
-}
-
-async function gEdFillAllCost() {
-  document.getElementById('gEdFillMenu').style.display = 'none';
-  const btn = document.getElementById('gEdFillBtn');
-  if (btn) { btn.textContent = 'Загружаю...'; btn.disabled = true; }
-  try {
-    // Collect item IDs not yet in cache
-    const needed = new Set();
-    for (let i = 0; i < gEdOps.length; i++) {
-      const itemId = String(parseInt(document.getElementById(`gEdItemId_${i}`)?.value || gEdOps[i]?.item?.id || 0));
-      if (itemId && itemId !== '0' && !(G_COST_CACHE?.[itemId] > 0)) needed.add(itemId);
-    }
-
-    if (needed.size > 0) {
-      const nowSec = Math.floor(Date.now() / 1000);
-      const WIN = 90 * 86400;
-      if (!window.G_COST_CACHE) window.G_COST_CACHE = {};
-      for (let w = 0; w < 10; w++) {
-        const stillNeeded = [...needed].filter(id => !(G_COST_CACHE[id] > 0));
-        if (!stillNeeded.length) break;
-        const wEnd = nowSec - w * WIN, wStart = wEnd - WIN;
-        const docs = (await gFetch('docpurchase/get', {start_date: wStart, end_date: wEnd, limit: 200, offset: 0}))?.result;
-        if (!Array.isArray(docs) || !docs.length) continue;
-        for (let ci = docs.length - 1; ci >= 0; ci -= 10) {
-          const chunk = docs.slice(Math.max(0, ci - 9), ci + 1);
-          const needNow = [...needed].filter(id => !(G_COST_CACHE[id] > 0));
-          if (!needNow.length) break;
-          const results = await Promise.all(chunk.map(d =>
-            gFetch('purchaseoperation/get', {document_ids: [d.id], item_ids: needNow.map(Number), limit: needNow.length + 5, offset: 0})
-          ));
-          for (const opsRes of results) {
-            for (const op of (opsRes?.result || [])) {
-              const id = String(op.item?.id ?? op.item_id ?? '');
-              const lpc = op.last_purchase_cost || op.cost || 0;
-              if (needed.has(id) && !(G_COST_CACHE[id] > 0) && lpc > 0) G_COST_CACHE[id] = lpc;
-            }
-          }
-        }
-      }
-    }
-
-    // Apply costs from cache to all rows
-    let filled = 0, missing = 0;
-    for (let i = 0; i < gEdOps.length; i++) {
-      const itemId = String(parseInt(document.getElementById(`gEdItemId_${i}`)?.value || gEdOps[i]?.item?.id || 0));
-      if (!itemId || itemId === '0') continue;
-      const cost = G_COST_CACHE?.[itemId] ?? 0;
-      if (cost > 0) {
-        const el = document.getElementById(`gEdCost_${i}`);
-        if (el) { el.value = cost; gEdCalc(i, 'cost'); gEdDirty.add(i); filled++; }
-      } else { missing++; }
-    }
-    if (filled === 0 && missing > 0) alert('Себестоимость не найдена за последние 2.5 года');
-  } catch(e) {
-    alert('Ошибка: ' + e.message);
-  } finally {
-    if (btn) { btn.textContent = 'Заполнить ▾'; btn.disabled = false; }
-  }
-}
-
-async function gEdFillAllPrice() {
-  document.getElementById('gEdFillMenu').style.display = 'none';
-  for (let i = 0; i < gEdOps.length; i++) {
-    const itemId = parseInt(document.getElementById(`gEdItemId_${i}`)?.value || 0);
-    if (!itemId) continue;
-    try {
-      const res = await gFetch('itemprice/get', {item_ids: [itemId], limit: 5, offset: 0});
-      const arr = Array.isArray(res.result) ? res.result : [];
-      const entry = arr.find(p => p.price_type_id === 1) || arr[0];
-      const price = entry?.price ?? entry?.value ?? 0;
-      if (price > 0) {
-        const el = document.getElementById(`gEdPrice_${i}`);
-        if (el) { el.value = price; gEdCalc(i, 'price'); }
-      }
-    } catch(e) {}
-  }
-}
-
-async function gEdSaveRow(i, opId) {
-  const qty  = parseFloat(document.getElementById(`gEdQty_${i}`)?.value   || 0);
-  const cost = parseFloat(document.getElementById(`gEdCost_${i}`)?.value  || 0);
-  const price= parseFloat(document.getElementById(`gEdPrice_${i}`)?.value || 0);
-  const st   = document.getElementById('gEdOpStatus');
-  if (st) { st.textContent = 'Сохраняю...'; st.style.color = '#4a7fa5'; }
-  try {
-    const payload = {id: opId, quantity: qty, cost: cost, vat_value: 0};
-    if (price > 0) payload.price = price;
-    const res = await gFetch('purchaseoperation/edit', [payload]);
-    if (!res.ok) throw new Error(res.result?.description || JSON.stringify(res.result));
-    gEdOps[i].quantity = qty;
-    gEdOps[i].cost     = cost;
-    gEdOps[i]._price   = price;
-    if (st) { st.textContent = '✅ Строка сохранена'; st.style.color = '#6bd490'; }
-    setTimeout(() => { if (st && st.textContent.startsWith('✅')) st.textContent = ''; }, 2500);
-  } catch(e) {
-    if (st) { st.textContent = 'Ошибка: ' + e.message; st.style.color = '#e88080'; }
-  }
-}
-
-async function gEdDeleteRow(i, opId) {
-  const name = gEdOps[i]?.item?.name || gEdOps[i]?.name || '';
-  if (!confirm(`Удалить позицию «${name}»?`)) return;
-  const st = document.getElementById('gEdOpStatus');
-  if (st) { st.textContent = 'Удаляю...'; st.style.color = '#4a7fa5'; }
-  try {
-    const res = await gFetch('purchaseoperation/delete', [{id: opId}]);
-    if (!res.ok) throw new Error(res.result?.description || JSON.stringify(res.result));
-    gEdOps.splice(i, 1);
-    gEdRender();
-    if (st) { st.textContent = '✅ Позиция удалена'; st.style.color = '#6bd490'; }
-    setTimeout(() => { if (st && st.textContent.startsWith('✅')) st.textContent = ''; }, 2500);
-  } catch(e) {
-    if (st) { st.textContent = 'Ошибка: ' + e.message; st.style.color = '#e88080'; }
-  }
-}
-
-function gEdAddItem() {
-  gEdItemSearchMode = true;
-  gOpenItemSearch();
-}
-
-async function gEdAddOpToDoc(item, qty) {
-  const st = document.getElementById('gEdOpStatus');
-  if (st) { st.textContent = `Добавляю «${item.name}»...`; st.style.color = '#4a7fa5'; }
-  try {
-    // Check if item already exists — aggregate quantity instead of adding duplicate
-    const existIdx = gEdOps.findIndex(op =>
-      String(op.item?.id ?? op.item_id ?? '') === String(item.id)
-    );
-    if (existIdx >= 0) {
-      const existing = gEdOps[existIdx];
-      const newQty = (existing.quantity ?? 0) + qty;
-      const res = await gFetch('purchaseoperation/edit', [{
-        id:        existing.id,
-        quantity:  newQty,
-        cost:      existing.cost ?? 0,
-        vat_value: 0
-      }]);
-      if (!res.ok) throw new Error(res.result?.description || JSON.stringify(res.result));
-      gEdOps[existIdx].quantity = newQty;
-      gEdRender();
-      if (st) { st.textContent = `✅ Кол-во «${item.name}» обновлено (+${qty})`; st.style.color = '#6bd490'; }
-    } else {
-      // Fetch sale price BEFORE adding (so it's saved immediately, not after async gEdFetchRowData)
-      let salePrice = 0;
-      try {
-        const prRes = await gFetch('itemprice/get', {item_ids: [parseInt(item.id)], limit: 5, offset: 0});
-        const prArr = Array.isArray(prRes.result) ? prRes.result : [];
-        const docPriceTypeId = gEdDocData?.price_type?.id;
-        const entry = (docPriceTypeId
-          ? prArr.find(p => (p.price_type?.id ?? p.price_type_id) === docPriceTypeId)
-          : null) || prArr.find(p => p.price_type_id === 1) || prArr[0];
-        salePrice = entry?.price ?? entry?.value ?? 0;
-      } catch(e) {}
-
-      // New item — add to document (include price if available)
-      const cost = item.cost ?? item.purchase_price ?? 0;
-      const addPayload = {
-        document_id: parseInt(gEdDocId),
-        item_id:     parseInt(item.id),
-        quantity:    qty,
-        cost:        cost,
-        vat_value:   0
-      };
-      if (salePrice > 0) addPayload.price = salePrice;
-      // Save dirty rows BEFORE adding (so reload doesn't overwrite unsaved cost/price/qty)
-      if (gEdDirty.size > 0) {
-        const saves = [];
-        for (const di of gEdDirty) {
-          const dop = gEdOps[di]; if (!dop?.id) continue;
-          const dqty  = parseFloat(document.getElementById(`gEdQty_${di}`)?.value  || dop.quantity || 0);
-          const dcost = parseFloat(document.getElementById(`gEdCost_${di}`)?.value || dop.cost     || 0);
-          const dprice= parseFloat(document.getElementById(`gEdPrice_${di}`)?.value|| dop._price   || 0);
-          const dpayload = {id: dop.id, quantity: dqty, cost: dcost, vat_value: 0};
-          if (dprice > 0) dpayload.price = dprice;
-          saves.push(gFetch('purchaseoperation/edit', [dpayload]));
-        }
-        await Promise.all(saves);
-        gEdDirty.clear();
-      }
-      const res = await gFetch('purchaseoperation/add', [addPayload]);
-      if (!res.ok) throw new Error(res.result?.description || JSON.stringify(res.result));
-      // Reload to get real op IDs (dirty rows already saved so API has fresh data)
-      const opRes = await gFetch('purchaseoperation/get', {document_ids: [parseInt(gEdDocId)], limit: 200, offset: 0});
-      gEdOps = opRes?.result || gEdOps;
-      // Ensure price is saved: if purchaseoperation/add didn't store price, save via edit
-      if (salePrice > 0) {
-        const newOpIdx = gEdOps.findIndex(o => String(o.item?.id ?? o.item_id ?? '') === String(item.id));
-        if (newOpIdx >= 0 && gEdOps[newOpIdx].id) {
-          gEdOps[newOpIdx]._price = salePrice;
-          if (!(gEdOps[newOpIdx].price > 0)) {
-            // purchaseoperation/add didn't save price — persist via edit
-            await gFetch('purchaseoperation/edit', [{
-              id: gEdOps[newOpIdx].id,
-              quantity: qty,
-              cost: cost,
-              price: salePrice,
-              vat_value: 0
-            }]);
-            gEdOps[newOpIdx].price = salePrice;
-          }
-        }
-      }
-      gEdRender();
-      if (st) { st.textContent = `✅ «${item.name}» добавлен`; st.style.color = '#6bd490'; }
-    }
-    setTimeout(() => { if (st && st.textContent.startsWith('✅')) st.textContent = ''; }, 2500);
-  } catch(e) {
-    if (st) { st.textContent = 'Ошибка: ' + e.message; st.style.color = '#e88080'; }
-  }
-  gEdItemSearchMode = false;
-}
-
-async function gEditorPerform() {
-  const btn = document.getElementById('gEdPerformBtn');
-  if (btn) btn.disabled = true;
-  const st = document.getElementById('gEdStatus');
-  const doPerform = !gEdIsPerformed;
-
-  try {
-    // ① Save all unsaved changes first (cost, qty, price)
-    if (gEdDirty.size > 0) {
-      if (st) { st.textContent = 'Сохраняю изменения...'; st.style.color = '#4a7fa5'; }
-      const saves = [];
-      for (const i of gEdDirty) {
-        const op = gEdOps[i];
-        if (!op) continue;
-        const qty   = parseFloat(document.getElementById(`gEdQty_${i}`)?.value   || op.quantity || 0);
-        const cost  = parseFloat(document.getElementById(`gEdCost_${i}`)?.value  || op.cost     || 0);
-        const price = parseFloat(document.getElementById(`gEdPrice_${i}`)?.value || op._price   || 0);
-        const payload = {id: op.id, quantity: qty, cost: cost, vat_value: 0};
-        if (price > 0) payload.price = price;
-        saves.push(gFetch('purchaseoperation/edit', [payload]));
-      }
-      await Promise.all(saves);
-      gEdDirty.clear();
-    }
-
-    // ② Perform / cancel perform
-    if (st) { st.textContent = doPerform ? 'Провожу...' : 'Отменяю проводку...'; st.style.color = '#4a7fa5'; }
-    const endpoint = doPerform ? 'docpurchase/perform' : 'docpurchase/performcancel';
-    const res = await gFetch(endpoint, {id: parseInt(gEdDocId)});
-    if (!res.ok) throw new Error(res.result?.description || res.result?.message || JSON.stringify(res.result));
-
-    gEdIsPerformed = doPerform;
-    gEdUpdatePerformBtn();
-    if (st) { st.textContent = doPerform ? '✅ Документ проведён' : '✅ Проводка отменена'; st.style.color = '#6bd490'; }
-
-    // ③ Refresh document amount in local list from API
-    const freshDoc = await gFetch('docpurchase/get', {ids: [parseInt(gEdDocId)]});
-    const updated = freshDoc?.result?.[0];
-    if (updated && gDocsData) {
-      const idx = gDocsData.findIndex(d => String(d.id) === String(gEdDocId));
-      if (idx >= 0) gDocsData[idx] = {...gDocsData[idx], ...updated};
-    }
-    gRender();
-  } catch(e) {
-    if (st) { st.textContent = 'Ошибка: ' + e.message; st.style.color = '#e88080'; }
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-async function gCloseEditor() {
-  // Auto-save all changed rows before closing
-  if (gEdDirty.size > 0) {
-    const st = document.getElementById('gEdOpStatus');
-    const closeBtn = document.querySelector('#gEditModal button[onclick="gCloseEditor()"]');
-    if (st) { st.textContent = 'Сохраняю изменения...'; st.style.color = '#4a7fa5'; }
-    if (closeBtn) closeBtn.disabled = true;
-    const saves = [];
-    for (const i of gEdDirty) {
-      const op = gEdOps[i];
-      if (!op) continue;
-      const qty  = parseFloat(document.getElementById(`gEdQty_${i}`)?.value   || op.quantity || 0);
-      const cost = parseFloat(document.getElementById(`gEdCost_${i}`)?.value  || op.cost     || 0);
-      const price= parseFloat(document.getElementById(`gEdPrice_${i}`)?.value || op._price   || 0);
-      const payload = {id: op.id, quantity: qty, cost: cost, vat_value: 0};
-      if (price > 0) payload.price = price;
-      saves.push(gFetch('purchaseoperation/edit', [payload]));
-    }
-    try { await Promise.all(saves); } catch(e) { console.error('Auto-save error', e); }
-    if (closeBtn) closeBtn.disabled = false;
-  }
-
-  // Compute real total from current ops before clearing (uses cost, not price)
-  const closingDocId = gEdDocId;
-  const closingOps = [...gEdOps];
-  const newTotal = Array.from({length: closingOps.length}, (_, j) => {
-    const qty  = parseFloat(document.getElementById(`gEdQty_${j}`)?.value  || 0) || (closingOps[j]?.quantity || 0);
-    const cost = parseFloat(document.getElementById(`gEdCost_${j}`)?.value || 0) || (closingOps[j]?.cost     || 0);
-    return qty * cost;
-  }).reduce((s, v) => s + v, 0);
-
-  document.getElementById('gEditModal').style.display = 'none';
-  document.body.style.overflow = '';
-  gEdDocId = null;
-  gEdDocData = null;
-  gEdOps = [];
-  gEdItemSearchMode = false;
-  gEdDirty = new Set();
-
-  // Store in persistent map — independent of gDocsData, no race condition with gLoad()
-  if (closingDocId) {
-    G_DOCTOTALS[closingDocId] = newTotal;
-    // Cache ops so expanded row shows correct items without re-fetch
-    if (Array.isArray(gDocsData)) {
-      const docIdx = gDocsData.findIndex(d => String(d.id) === String(closingDocId));
-      if (docIdx >= 0) gDocsData[docIdx].operations = closingOps;
-    }
-  }
-  gRender();
-
-  // Refresh list from API in background (don't null gDocsData — gLoad always fetches fresh,
-  // and nulling would wipe _opsTotal before gLoad has a chance to preserve it)
-  gLoad();
-}
-
-// Preload cost cache in background immediately (not just when Goods tab opens)
-// so 🕐 button and "Заполнить → Себестоимость" are instant on first use
-setTimeout(gBuildCostCache, 800);
-
-</script>
-
-    <!-- ITEM SEARCH MODAL -->
-    <!-- ITEM SEARCH MODAL -->
-    <div id="gItemSearchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto">
-      <div style="background:#162230;border-radius:14px;border:1px solid #2a4060;width:100%;max-width:720px;display:flex;flex-direction:column">
-        <div style="padding:14px 18px;border-bottom:1px solid #1e3048;display:flex;gap:10px;align-items:center">
-          <span style="font-size:15px;font-weight:700;color:#7abde8;white-space:nowrap">Поиск товара</span>
-          <input id="gItemQ" placeholder="Название или код..." autocomplete="off"
-            style="flex:1;padding:9px 14px;border-radius:8px;border:1px solid #2a4060;background:#0f1923;color:#c8dff0;font-size:14px;outline:none"
-            oninput="gItemSearch()" onkeydown="if(event.key==='Escape')gCloseItemSearch()">
-          <button onclick="gCloseItemSearch()" style="background:none;border:none;color:#4a7fa5;font-size:22px;cursor:pointer;padding:2px 8px;line-height:1">✕</button>
-        </div>
-        <div id="gItemSearchStatus" style="padding:6px 18px;font-size:12px;color:#3d6080;min-height:26px"></div>
-        <div style="overflow-y:auto;max-height:60vh">
-          <table style="width:100%;border-collapse:collapse">
-            <thead style="position:sticky;top:0;z-index:1">
-              <tr style="background:#0a1520">
-                <th style="padding:7px 10px;font-size:10px;color:#3d6080;text-align:left;width:70px;text-transform:uppercase;letter-spacing:.5px">Код</th>
-                <th style="padding:7px 10px;font-size:10px;color:#3d6080;text-align:left;text-transform:uppercase;letter-spacing:.5px">Наименование</th>
-                <th style="padding:7px 8px;font-size:10px;color:#3d6080;text-align:center;width:46px;text-transform:uppercase;letter-spacing:.5px">Ед.</th>
-                <th style="padding:7px 10px;font-size:10px;color:#3d6080;text-align:right;width:110px;text-transform:uppercase;letter-spacing:.5px">Цена продажи</th>
-                <th style="width:40px"></th>
-              </tr>
-            </thead>
-            <tbody id="gItemSearchBody">
-              <tr><td colspan="5" style="padding:30px;text-align:center;color:#3d6080;font-size:13px">Введите название или код для поиска</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- WASTE / QTY DIALOG -->
-    <div id="gWasteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;align-items:center;justify-content:center;padding:20px">
-      <div style="background:#162230;border-radius:14px;border:1px solid #2a4060;width:100%;max-width:420px">
-        <div style="padding:16px 20px;border-bottom:1px solid #1e3048">
-          <div style="font-size:15px;font-weight:700;color:#c8dff0">Добавление позиции</div>
-          <div id="gWmItemName" style="font-size:12px;color:#5a8ab0;margin-top:4px"></div>
-        </div>
-        <div style="padding:18px 20px;display:flex;flex-direction:column;gap:16px">
-          <!-- Gross weight -->
-          <div>
-            <div style="font-size:11px;color:#3d6080;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Масса брутто (кг)</div>
-            <input id="gWmQty" type="number" min="0.001" step="0.001" placeholder="0.000"
-              style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #2a4060;background:#0f1923;color:#c8dff0;font-size:18px;font-weight:700;box-sizing:border-box;outline:none;text-align:right"
-              oninput="gWmCalc()">
-          </div>
-          <!-- Waste % -->
-          <div>
-            <div style="font-size:11px;color:#3d6080;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Мусор (тара, мешок)</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              <button class="gwm-pct" data-pct="0"  onclick="gWmPick(0)"  style="padding:7px 14px;border-radius:7px;border:1px solid #2a4060;background:transparent;color:#4a7fa5;font-size:13px;font-weight:600;cursor:pointer">Нет</button>
-              <button class="gwm-pct" data-pct="6"  onclick="gWmPick(6)"  style="padding:7px 14px;border-radius:7px;border:1px solid #2a4060;background:transparent;color:#4a7fa5;font-size:13px;font-weight:600;cursor:pointer">6%</button>
-              <button class="gwm-pct" data-pct="7"  onclick="gWmPick(7)"  style="padding:7px 14px;border-radius:7px;border:1px solid #2a4060;background:transparent;color:#4a7fa5;font-size:13px;font-weight:600;cursor:pointer">7%</button>
-              <button class="gwm-pct" data-pct="8"  onclick="gWmPick(8)"  style="padding:7px 14px;border-radius:7px;border:1px solid #2a4060;background:transparent;color:#4a7fa5;font-size:13px;font-weight:600;cursor:pointer">8%</button>
-              <button class="gwm-pct" data-pct="9"  onclick="gWmPick(9)"  style="padding:7px 14px;border-radius:7px;border:1px solid #2a4060;background:transparent;color:#4a7fa5;font-size:13px;font-weight:600;cursor:pointer">9%</button>
-              <button class="gwm-pct" data-pct="10" onclick="gWmPick(10)" style="padding:7px 14px;border-radius:7px;border:1px solid #2a4060;background:transparent;color:#4a7fa5;font-size:13px;font-weight:600;cursor:pointer">10%</button>
-            </div>
-          </div>
-          <!-- Net result -->
-          <div style="background:#0f1923;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
-            <div style="font-size:12px;color:#3d6080">Нетто (к приходу)</div>
-            <div id="gWmNet" style="font-size:22px;font-weight:800;color:#c8dff0">—</div>
-          </div>
-          <div id="gWmWasteInfo" style="font-size:11px;color:#5a7090;text-align:right;min-height:16px"></div>
-        </div>
-        <div style="padding:14px 20px;border-top:1px solid #1e3048;display:flex;gap:10px">
-          <button onclick="gWmCancel()" style="flex:1;padding:11px;border-radius:9px;border:1px solid #2a4060;background:transparent;color:#4a7fa5;font-size:14px;font-weight:600;cursor:pointer">Отмена</button>
-          <button onclick="gWmOk()" style="flex:2;padding:11px;border-radius:9px;border:none;background:linear-gradient(135deg,#1a7a4a,#0f5c36);color:#fff;font-size:14px;font-weight:700;cursor:pointer">OK — Добавить</button>
-        </div>
-      </div>
-    </div>
-
-</body>
-</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+        <d
