@@ -1,0 +1,5 @@
+# Nixpacks конфигурация для Railway
+# Устанавливает ffmpeg (нужен для Whisper)
+
+[phases.setup]
+nixPkgs = ["ffmpeg"]
