@@ -1,0 +1,11 @@
+# Flask-сервер (web)
+flask>=3.0
+gunicorn>=21.0
+requests>=2.31
+
+# Telegram-бот
+python-telegram-bot[job-queue]>=20.7
+
+# Голосовое управление (опционально)
+# Если Railway не тянет — задайте WHISPER_MODEL=none и закомментируйте строку ниже
+openai-whisper
